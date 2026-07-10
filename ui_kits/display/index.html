@@ -1,0 +1,156 @@
+<!-- @dsCard group="Display" viewport="1280x720" name="Voice Display" subtitle="Full-screen visualizer — states, context modulations, mic-reactive" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piranesi — Voice Display</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--navy-950); font-family: var(--font-ui); overflow: hidden; }
+  a { color: var(--bronze-400); } a:hover { color: var(--bronze-300); }
+  #root { height: 100%; }
+  @keyframes pv-fade { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { PiranesiOrb } = window.PiranesiVUIDesignSystem_8af396;
+const { useState, useEffect, useRef } = React;
+
+const STATES = ["waiting", "listening", "thinking", "talking", "working", "error"];
+const MODS = ["auto", "dawn", "day", "dusk", "night", "rain", "storm", "degraded", "threat"];
+const CAPTIONS = {
+  waiting: "",
+  listening: "Listening…",
+  thinking: "Considering…",
+  talking: "The study lights are set to evening.",
+  working: "Drawing the curtains in the gallery…",
+  error: "I did not catch that.",
+};
+const THREAT_CAPTIONS = {
+  waiting: "Perimeter armed.",
+  listening: "Listening. Identify yourself.",
+  thinking: "Assessing the intrusion…",
+  talking: "You are not known to this house.",
+  working: "Sealing the gallery.",
+  error: "Signal lost.",
+};
+const SHAPES = [
+  { id: "landscape", label: "Landscape", w: "100%", h: "100%", round: false },
+  { id: "portrait", label: "Portrait", w: "min(42vw, 56vh)", h: "88vh", round: false },
+  { id: "square", label: "Square", w: "min(80vh, 60vw)", h: "min(80vh, 60vw)", round: false },
+  { id: "round", label: "Round", w: "min(80vh, 60vw)", h: "min(80vh, 60vw)", round: true },
+];
+
+const displayStyles = {
+  stage: { height: "100%", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" },
+  frame: (sh) => ({
+    background: "radial-gradient(ellipse at 50% 42%, var(--navy-700) 0%, var(--navy-900) 68%, var(--navy-950) 100%)",
+    borderRadius: sh.round ? "50%" : sh.id === "landscape" ? 0 : "var(--radius-md)",
+    border: sh.id === "landscape" ? "none" : "1px solid var(--border-subtle)",
+    width: sh.w, height: sh.h, position: "relative", overflow: "hidden",
+    display: "flex", flexDirection: "column", transition: "border-radius var(--dur-state) var(--ease-fluid)",
+  }),
+  threatOverlay: {
+    position: "absolute", inset: 0, pointerEvents: "none",
+    background: "radial-gradient(ellipse at 50% 50%, rgba(90,10,20,0) 38%, rgba(42,4,10,0.65) 100%)",
+    animation: "pv-fade var(--dur-state) var(--ease-fluid) both",
+  },
+  caption: (threat, layout) => ({
+    position: "absolute",
+    ...(layout === "side"
+      ? { left: "56%", right: "5%", top: "50%", transform: "translateY(-50%)", textAlign: "left", fontSize: "clamp(16px, 2.8vmin, 30px)", lineHeight: 1.5 }
+      : layout === "edge"
+      ? { left: "4%", right: "4%", bottom: "12%", textAlign: "center", fontSize: "clamp(14px, 2.4vmin, 24px)", lineHeight: 1.5 }
+      : {
+          left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "66%", aspectRatio: "1",
+          borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+          boxSizing: "border-box", padding: "11%", textAlign: "center", fontSize: "clamp(13px, 2.2vmin, 22px)", lineHeight: 1.5,
+          background: threat
+            ? "radial-gradient(circle closest-side, rgba(42,14,20,0.95) 0%, rgba(42,14,20,0.62) 60%, rgba(42,14,20,0) 100%)"
+            : "radial-gradient(circle closest-side, rgba(10,18,38,0.95) 0%, rgba(10,18,38,0.62) 60%, rgba(10,18,38,0) 100%)",
+        }),
+    color: threat ? "var(--threat-text)" : "var(--bronze-300)",
+    fontWeight: threat ? 700 : 400,
+    letterSpacing: threat ? "0.12em" : "0.02em",
+    textTransform: threat ? "uppercase" : "none",
+    animation: "pv-fade var(--dur-state) var(--ease-fluid) both",
+  }),
+  chipsWrap: (bottom) => ({ position: "absolute", left: 0, right: 0, bottom, display: "flex", justifyContent: "center", gap: 8, zIndex: 3 }),
+  chip: (on, small) => ({
+    fontFamily: "var(--font-ui)", fontSize: small ? 10 : 12, letterSpacing: small ? "0.08em" : "0.06em",
+    padding: small ? "5px 11px" : "7px 14px", borderRadius: "var(--radius-pill)", cursor: on ? "default" : "pointer",
+    background: on ? "var(--bronze-500)" : "rgba(195, 156, 114, 0.08)",
+    color: on ? "var(--navy-900)" : "var(--bronze-400)",
+    border: on ? "1px solid var(--bronze-500)" : "1px solid var(--border-subtle)",
+    transition: "all var(--dur-fast) var(--ease-fluid)",
+  }),
+  threatChip: (on) => ({
+    fontFamily: "var(--font-ui)", fontSize: 10, letterSpacing: "0.08em",
+    padding: "5px 11px", borderRadius: "var(--radius-pill)", cursor: on ? "default" : "pointer",
+    background: on ? "var(--mod-threat)" : "rgba(139,30,45,0.12)",
+    color: on ? "#FFD9D2" : "#C86B5C",
+    border: on ? "1px solid #B3313F" : "1px solid rgba(217,112,95,0.35)",
+    textTransform: on ? "uppercase" : "none", fontWeight: on ? 700 : 400,
+    transition: "all var(--dur-fast) var(--ease-fluid)",
+  }),
+  cornerWrap: (sideProp) => ({ position: "absolute", top: 16, [sideProp]: 16, display: "flex", gap: 6, zIndex: 3 }),
+};
+
+function Display() {
+  const [state, setState] = useState("listening");
+  const [mod, setMod] = useState("auto");
+  const [shape, setShape] = useState(SHAPES[0]);
+  const [mic, setMic] = useState(null);
+  const micRef = useRef(null);
+  micRef.current = mic;
+  useEffect(() => () => { if (micRef.current) micRef.current.getTracks().forEach((t) => t.stop()); }, []);
+
+  const toggleMic = async () => {
+    if (mic) { mic.getTracks().forEach((t) => t.stop()); setMic(null); return; }
+    try { setMic(await navigator.mediaDevices.getUserMedia({ audio: true })); }
+    catch (e) { console.warn("Microphone unavailable:", e); }
+  };
+
+  const threat = mod === "threat";
+  const caption = threat ? THREAT_CAPTIONS[state] : CAPTIONS[state];
+  const layout = shape.id === "landscape" ? "side" : shape.id === "portrait" ? "edge" : "center";
+  return (
+    <div style={displayStyles.stage}>
+      <div style={displayStyles.frame(shape)} data-screen-label="Voice Display">
+        <PiranesiOrb state={state} modulation={mod} audio={mic} showGlyph={!(caption && layout === "center")} offsetX={layout === "side" && caption ? -0.26 : 0} />
+        {threat ? <div style={displayStyles.threatOverlay}></div> : null}
+        {caption ? <div key={layout + mod + state} style={displayStyles.caption(threat, layout)}>{caption}</div> : null}
+      </div>
+      <div style={displayStyles.cornerWrap("left")}>
+        <button style={displayStyles.chip(!!mic, false)} onClick={toggleMic}>{mic ? "mic live" : "mic off"}</button>
+      </div>
+      <div style={displayStyles.cornerWrap("right")}>
+        {SHAPES.map((sh) => (
+          <button key={sh.id} style={displayStyles.chip(shape.id === sh.id, false)} onClick={() => setShape(sh)}>{sh.label}</button>
+        ))}
+      </div>
+      <div style={displayStyles.chipsWrap(56)}>
+        {STATES.map((s) => (
+          <button key={s} style={displayStyles.chip(state === s, false)} onClick={() => setState(s)}>{s}</button>
+        ))}
+      </div>
+      <div style={displayStyles.chipsWrap(18)}>
+        {MODS.map((m) => (
+          <button key={m} style={m === "threat" ? displayStyles.threatChip(mod === m) : displayStyles.chip(mod === m, true)} onClick={() => setMod(m)}>{m}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<Display />);
+</script>
+</body>
+</html>

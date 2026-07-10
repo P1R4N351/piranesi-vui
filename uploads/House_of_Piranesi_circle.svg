@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="House of Piranesi">
+  <circle cx="512" cy="512" r="500" fill="#C39C72"></circle>
+  <circle cx="512" cy="512" r="468" fill="#16294d"></circle>
+  <g fill="none" stroke="#C39C72" stroke-width="60.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M292 359 L512 238 L732 359"></path>
+    <path d="M369 425 L369 689"></path>
+    <path d="M512 425 L512 689"></path>
+    <path d="M655 425 L655 689"></path>
+    <path d="M248 722 L776 722"></path>
+  </g>
+</svg>

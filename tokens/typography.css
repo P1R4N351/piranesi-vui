@@ -1,0 +1,21 @@
+/* Piranesi VUI — typography. Cormorant Garamond (display) + IBM Plex Sans (UI).
+   Loaded from Google Fonts — substitute binaries when brand fonts exist. */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: Verdana, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+  --text-2xl: 40px;
+  --text-3xl: 64px;
+
+  --leading-tight: 1.1;
+  --leading-normal: 1.5;
+  --tracking-caps: 0.18em; /* small-caps labels, state names */
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Voice Display" description="Full-screen Piranesi voice orb — states, context modulations (time/weather/status/threat), mic-reactive, any display shape" -->
+<helmet>
+  <script src="./ds-base.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0A1226; }
+    @keyframes pv-fade { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</helmet>
+<div data-screen-label="Voice Display" style="height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; font-family: Verdana, system-ui, sans-serif; overflow: hidden;">
+
+  <sc-if value="{{ isL }}" hint-placeholder-val="{{ true }}">
+    <div style="background: radial-gradient(ellipse at 50% 42%, #16294d 0%, #0E1A38 68%, #0A1226 100%); width: 100%; height: 100%; border-radius: 0; border: none; position: relative; overflow: hidden;">
+      <x-import component-from-global-scope="PiranesiVUIDesignSystem_8af396.PiranesiOrb" state="{{ mode }}" modulation="{{ modName }}" dc-props="{{ orbProps }}" style="position: absolute; inset: 0;" hint-size="100%,100%"></x-import>
+      <sc-if value="{{ isThreatMode }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(90,10,20,0) 38%, rgba(42,4,10,0.65) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;"></div></sc-if>
+      <sc-if value="{{ capNormal }}" hint-placeholder-val="{{ true }}"><div style="position: absolute; left: 56%; right: 5%; top: 50%; transform: translateY(-50%); color: #E3C9A8; font-size: clamp(16px, 2.8vmin, 30px); line-height: 1.5; letter-spacing: 0.02em; text-align: left; animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+      <sc-if value="{{ capThreat }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 56%; right: 5%; top: 50%; transform: translateY(-50%); color: #FF8577; font-weight: 700; font-size: clamp(16px, 2.8vmin, 30px); line-height: 1.5; letter-spacing: 0.12em; text-transform: uppercase; text-align: left; animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isP }}" hint-placeholder-val="{{ false }}">
+    <div style="background: radial-gradient(ellipse at 50% 42%, #16294d 0%, #0E1A38 68%, #0A1226 100%); width: min(42vw, 56vh); height: 88vh; border-radius: 12px; border: 1px solid rgba(195,156,114,0.22); position: relative; overflow: hidden;">
+      <x-import component-from-global-scope="PiranesiVUIDesignSystem_8af396.PiranesiOrb" state="{{ mode }}" modulation="{{ modName }}" dc-props="{{ orbProps }}" style="position: absolute; inset: 0;" hint-size="100%,100%"></x-import>
+      <sc-if value="{{ isThreatMode }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(90,10,20,0) 38%, rgba(42,4,10,0.65) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;"></div></sc-if>
+      <sc-if value="{{ capNormal }}" hint-placeholder-val="{{ true }}"><div style="position: absolute; left: 4%; right: 4%; bottom: 12%; color: #E3C9A8; font-size: clamp(14px, 2.4vmin, 24px); line-height: 1.5; letter-spacing: 0.02em; text-align: center; animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+      <sc-if value="{{ capThreat }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 4%; right: 4%; bottom: 12%; color: #FF8577; font-weight: 700; font-size: clamp(14px, 2.4vmin, 24px); line-height: 1.5; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isS }}" hint-placeholder-val="{{ false }}">
+    <div style="background: radial-gradient(ellipse at 50% 42%, #16294d 0%, #0E1A38 68%, #0A1226 100%); width: min(80vh, 60vw); height: min(80vh, 60vw); border-radius: 12px; border: 1px solid rgba(195,156,114,0.22); position: relative; overflow: hidden;">
+      <x-import component-from-global-scope="PiranesiVUIDesignSystem_8af396.PiranesiOrb" state="{{ mode }}" modulation="{{ modName }}" dc-props="{{ orbProps }}" style="position: absolute; inset: 0;" hint-size="100%,100%"></x-import>
+      <sc-if value="{{ isThreatMode }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(90,10,20,0) 38%, rgba(42,4,10,0.65) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;"></div></sc-if>
+      <sc-if value="{{ capNormal }}" hint-placeholder-val="{{ true }}"><div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 66%; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 11%; color: #E3C9A8; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1.5; letter-spacing: 0.02em; text-align: center; background: radial-gradient(circle closest-side, rgba(10,18,38,0.95) 0%, rgba(10,18,38,0.62) 60%, rgba(10,18,38,0) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+      <sc-if value="{{ capThreat }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 66%; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 11%; color: #FF8577; font-weight: 700; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1.5; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; background: radial-gradient(circle closest-side, rgba(42,14,20,0.95) 0%, rgba(42,14,20,0.62) 60%, rgba(42,14,20,0) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isR }}" hint-placeholder-val="{{ false }}">
+    <div style="background: radial-gradient(ellipse at 50% 42%, #16294d 0%, #0E1A38 68%, #0A1226 100%); width: min(80vh, 60vw); height: min(80vh, 60vw); border-radius: 50%; border: 1px solid rgba(195,156,114,0.22); position: relative; overflow: hidden;">
+      <x-import component-from-global-scope="PiranesiVUIDesignSystem_8af396.PiranesiOrb" state="{{ mode }}" modulation="{{ modName }}" dc-props="{{ orbProps }}" style="position: absolute; inset: 0;" hint-size="100%,100%"></x-import>
+      <sc-if value="{{ isThreatMode }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(90,10,20,0) 38%, rgba(42,4,10,0.65) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;"></div></sc-if>
+      <sc-if value="{{ capNormal }}" hint-placeholder-val="{{ true }}"><div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 66%; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 11%; color: #E3C9A8; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1.5; letter-spacing: 0.02em; text-align: center; background: radial-gradient(circle closest-side, rgba(10,18,38,0.95) 0%, rgba(10,18,38,0.62) 60%, rgba(10,18,38,0) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+      <sc-if value="{{ capThreat }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 66%; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 11%; color: #FF8577; font-weight: 700; font-size: clamp(13px, 2.2vmin, 22px); line-height: 1.5; letter-spacing: 0.12em; text-transform: uppercase; text-align: center; background: radial-gradient(circle closest-side, rgba(42,14,20,0.95) 0%, rgba(42,14,20,0.62) 60%, rgba(42,14,20,0) 100%); animation: pv-fade 650ms cubic-bezier(0.4, 0, 0.2, 1) both;">{{ caption }}</div></sc-if>
+    </div>
+  </sc-if>
+
+  <div style="position: absolute; top: 16px; left: 16px; display: flex; gap: 6px; z-index: 3;">
+    <sc-if value="{{ micOff }}" hint-placeholder-val="{{ true }}"><button onClick="{{ toggleMic }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">mic off</button></sc-if>
+    <sc-if value="{{ micOn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleMic }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">mic live</button></sc-if>
+  </div>
+
+  <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 3;">
+    <sc-if value="{{ isL }}" hint-placeholder-val="{{ true }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">Landscape</button></sc-if>
+    <sc-if value="{{ notL }}" hint-placeholder-val="{{ false }}"><button onClick="{{ setL }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">Landscape</button></sc-if>
+    <sc-if value="{{ isP }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">Portrait</button></sc-if>
+    <sc-if value="{{ notP }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setP }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">Portrait</button></sc-if>
+    <sc-if value="{{ isS }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">Square</button></sc-if>
+    <sc-if value="{{ notS }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setS }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">Square</button></sc-if>
+    <sc-if value="{{ isR }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">Round</button></sc-if>
+    <sc-if value="{{ notR }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setR }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">Round</button></sc-if>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 56px; display: flex; justify-content: center; gap: 8px; z-index: 3;">
+    <sc-if value="{{ isWaiting }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">waiting</button></sc-if>
+    <sc-if value="{{ notWaiting }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setWaiting }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">waiting</button></sc-if>
+    <sc-if value="{{ isListening }}" hint-placeholder-val="{{ true }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">listening</button></sc-if>
+    <sc-if value="{{ notListening }}" hint-placeholder-val="{{ false }}"><button onClick="{{ setListening }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">listening</button></sc-if>
+    <sc-if value="{{ isThinking }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">thinking</button></sc-if>
+    <sc-if value="{{ notThinking }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setThinking }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">thinking</button></sc-if>
+    <sc-if value="{{ isTalking }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">talking</button></sc-if>
+    <sc-if value="{{ notTalking }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setTalking }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">talking</button></sc-if>
+    <sc-if value="{{ isWorking }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">working</button></sc-if>
+    <sc-if value="{{ notWorking }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setWorking }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">working</button></sc-if>
+    <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">error</button></sc-if>
+    <sc-if value="{{ notError }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setError }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 12px; letter-spacing: 0.06em; padding: 7px 14px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">error</button></sc-if>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; gap: 6px; z-index: 3;">
+    <sc-if value="{{ isModAuto }}" hint-placeholder-val="{{ true }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">auto</button></sc-if>
+    <sc-if value="{{ notModAuto }}" hint-placeholder-val="{{ false }}"><button onClick="{{ setModAuto }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">auto</button></sc-if>
+    <sc-if value="{{ isModDawn }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">dawn</button></sc-if>
+    <sc-if value="{{ notModDawn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModDawn }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">dawn</button></sc-if>
+    <sc-if value="{{ isModDay }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">day</button></sc-if>
+    <sc-if value="{{ notModDay }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModDay }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">day</button></sc-if>
+    <sc-if value="{{ isModDusk }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">dusk</button></sc-if>
+    <sc-if value="{{ notModDusk }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModDusk }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">dusk</button></sc-if>
+    <sc-if value="{{ isModNight }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">night</button></sc-if>
+    <sc-if value="{{ notModNight }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModNight }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">night</button></sc-if>
+    <sc-if value="{{ isModRain }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">rain</button></sc-if>
+    <sc-if value="{{ notModRain }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModRain }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">rain</button></sc-if>
+    <sc-if value="{{ isModStorm }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">storm</button></sc-if>
+    <sc-if value="{{ notModStorm }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModStorm }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">storm</button></sc-if>
+    <sc-if value="{{ isModDegraded }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #C39C72; color: #0E1A38; border: 1px solid #C39C72;">degraded</button></sc-if>
+    <sc-if value="{{ notModDegraded }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModDegraded }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(195,156,114,0.08); color: #D3B28D; border: 1px solid rgba(195,156,114,0.22); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(195,156,114,0.16);">degraded</button></sc-if>
+    <sc-if value="{{ isModThreat }}" hint-placeholder-val="{{ false }}"><button style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: default; background: #8B1E2D; color: #FFD9D2; border: 1px solid #B3313F; text-transform: uppercase; font-weight: 700;">threat</button></sc-if>
+    <sc-if value="{{ notModThreat }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setModThreat }}" style="font-family: Verdana, system-ui, sans-serif; font-size: 10px; letter-spacing: 0.08em; padding: 5px 11px; border-radius: 999px; cursor: pointer; background: rgba(139,30,45,0.12); color: #C86B5C; border: 1px solid rgba(217,112,95,0.35); transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);" style-hover="background: rgba(139,30,45,0.25);">threat</button></sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 720}, &quot;initialState&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;waiting&quot;, &quot;listening&quot;, &quot;thinking&quot;, &quot;talking&quot;, &quot;working&quot;, &quot;error&quot;], &quot;default&quot;: &quot;listening&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Orb&quot;}, &quot;initialModulation&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;auto&quot;, &quot;dawn&quot;, &quot;day&quot;, &quot;dusk&quot;, &quot;night&quot;, &quot;rain&quot;, &quot;storm&quot;, &quot;degraded&quot;, &quot;threat&quot;], &quot;default&quot;: &quot;auto&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Orb&quot;}, &quot;showGlyph&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Orb&quot;}, &quot;intensity&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 1, &quot;min&quot;: 0, &quot;max&quot;: 1.5, &quot;step&quot;: 0.1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Orb&quot;}}">
+class Component extends DCLogic {
+  state = { mode: null, shape: "landscape", mod: null, mic: null };
+
+  componentWillUnmount() {
+    if (this.state.mic) this.state.mic.getTracks().forEach((t) => t.stop());
+  }
+
+  toggleMic = async () => {
+    if (this.state.mic) {
+      this.state.mic.getTracks().forEach((t) => t.stop());
+      this.setState({ mic: null });
+      return;
+    }
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.setState({ mic: s });
+    } catch (e) {
+      console.warn("Microphone unavailable:", e);
+    }
+  };
+
+  renderVals() {
+    const mode = this.state.mode ?? (this.props.initialState ?? "listening");
+    const mod = this.state.mod ?? (this.props.initialModulation ?? "auto");
+    const shape = this.state.shape;
+    const threat = mod === "threat";
+
+    const CAPTIONS = {
+      waiting: "",
+      listening: "Listening…",
+      thinking: "Considering…",
+      talking: "The study lights are set to evening.",
+      working: "Drawing the curtains in the gallery…",
+      error: "I did not catch that.",
+    };
+    const THREAT_CAPTIONS = {
+      waiting: "Perimeter armed.",
+      listening: "Listening. Identify yourself.",
+      thinking: "Assessing the intrusion…",
+      talking: "You are not known to this house.",
+      working: "Sealing the gallery.",
+      error: "Signal lost.",
+    };
+
+    const caption = threat ? THREAT_CAPTIONS[mode] || "" : CAPTIONS[mode] || "";
+    const hasCaption = !!caption;
+
+    const vals = {
+      mode,
+      modName: mod,
+      caption,
+      hasCaption,
+      capNormal: hasCaption && !threat,
+      capThreat: hasCaption && threat,
+      isThreatMode: threat,
+      orbProps: {
+        audio: this.state.mic,
+        showGlyph: (this.props.showGlyph ?? true) && !(hasCaption && (shape === "square" || shape === "round")),
+        intensity: this.props.intensity ?? 1,
+        offsetX: shape === "landscape" && hasCaption ? -0.26 : 0,
+      },
+      micOn: !!this.state.mic,
+      micOff: !this.state.mic,
+      toggleMic: this.toggleMic,
+    };
+
+    const shapes = { L: "landscape", P: "portrait", S: "square", R: "round" };
+    for (const key of Object.keys(shapes)) {
+      const name = shapes[key];
+      vals["is" + key] = shape === name;
+      vals["not" + key] = shape !== name;
+      vals["set" + key] = () => this.setState({ shape: name });
+    }
+
+    for (const m of ["waiting", "listening", "thinking", "talking", "working", "error"]) {
+      const K = m.charAt(0).toUpperCase() + m.slice(1);
+      vals["is" + K] = mode === m;
+      vals["not" + K] = mode !== m;
+      vals["set" + K] = () => this.setState({ mode: m });
+    }
+
+    for (const m of ["auto", "dawn", "day", "dusk", "night", "rain", "storm", "degraded", "threat"]) {
+      const K = "Mod" + m.charAt(0).toUpperCase() + m.slice(1);
+      vals["is" + K] = mod === m;
+      vals["not" + K] = mod !== m;
+      vals["set" + K] = () => this.setState({ mod: m });
+    }
+
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+/* Piranesi VUI — motion. Everything is fluid: no hard cuts between states. */
+:root {
+  --ease-fluid: cubic-bezier(0.4, 0.0, 0.2, 1); /* @kind other */ /* default UI ease */
+  --ease-drift: cubic-bezier(0.33, 0.0, 0.15, 1); /* @kind other */ /* long ambient moves */
+  --ease-swell: cubic-bezier(0.34, 1.25, 0.4, 1); /* @kind other */ /* gentle overshoot */
+
+  --dur-fast: 180ms; /* @kind other */ /* hover, press */
+  --dur-state: 650ms; /* @kind other */ /* mood/state crossfade */
+  --dur-breath: 4200ms; /* @kind other */ /* idle breathing cycle */
+}

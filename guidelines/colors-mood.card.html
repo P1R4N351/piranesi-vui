@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x130" name="Mood Hues" subtitle="The orb shifts hue with conversational state" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-deep); font-family: var(--font-ui); padding: 14px; }
+  a { color: var(--bronze-400); } a:hover { color: var(--bronze-300); }
+  .row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .m { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 4px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+  .dot { width: 34px; height: 34px; border-radius: 50%; }
+  .m span { font-size: 11px; color: var(--text-muted); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="m"><div class="dot" style="background: var(--mood-waiting); box-shadow: 0 0 18px var(--mood-waiting);"></div><span>waiting</span></div>
+    <div class="m"><div class="dot" style="background: var(--mood-listening); box-shadow: 0 0 18px var(--mood-listening);"></div><span>listening</span></div>
+    <div class="m"><div class="dot" style="background: var(--mood-thinking); box-shadow: 0 0 18px var(--mood-thinking);"></div><span>thinking</span></div>
+    <div class="m"><div class="dot" style="background: var(--mood-talking); box-shadow: 0 0 18px var(--mood-talking);"></div><span>talking</span></div>
+    <div class="m"><div class="dot" style="background: var(--mood-working); box-shadow: 0 0 18px var(--mood-working);"></div><span>working</span></div>
+    <div class="m"><div class="dot" style="background: var(--mood-error); box-shadow: 0 0 18px var(--mood-error);"></div><span>error</span></div>
+  </div>
+</body>
+</html>

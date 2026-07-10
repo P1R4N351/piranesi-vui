@@ -1,0 +1,35 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Navy & Bronze" subtitle="Base surface and accent scales" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-deep); font-family: var(--font-mono); padding: 14px; }
+  a { color: var(--bronze-400); } a:hover { color: var(--bronze-300); }
+  .row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 8px; }
+  .sw { height: 46px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; align-items: flex-end; padding: 4px 6px; }
+  .sw span { font-size: 10px; color: var(--text-muted); }
+  .sw.on-light span { color: rgba(14, 26, 56, 0.75); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="sw" style="background: var(--navy-950);"><span>navy-950</span></div>
+    <div class="sw" style="background: var(--navy-900);"><span>navy-900</span></div>
+    <div class="sw" style="background: var(--navy-800);"><span>navy-800</span></div>
+    <div class="sw" style="background: var(--navy-700);"><span>navy-700 ★</span></div>
+    <div class="sw" style="background: var(--navy-600);"><span>navy-600</span></div>
+    <div class="sw" style="background: var(--navy-500);"><span>navy-500</span></div>
+  </div>
+  <div class="row" style="margin-bottom: 0;">
+    <div class="sw on-light" style="background: var(--bronze-300);"><span>bronze-300</span></div>
+    <div class="sw on-light" style="background: var(--bronze-400);"><span>bronze-400</span></div>
+    <div class="sw on-light" style="background: var(--bronze-500);"><span>bronze-500 ★</span></div>
+    <div class="sw on-light" style="background: var(--bronze-600);"><span>bronze-600</span></div>
+    <div class="sw" style="background: var(--bronze-700);"><span>bronze-700</span></div>
+    <div class="sw" style="background: var(--bronze-800);"><span>bronze-800</span></div>
+  </div>
+</body>
+</html>

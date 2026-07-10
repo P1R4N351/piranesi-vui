@@ -1,0 +1,31 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Context Modulations" subtitle="Time of day, weather, system status — layered over any mood" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-deep); font-family: var(--font-ui); padding: 14px; }
+  a { color: var(--bronze-400); } a:hover { color: var(--bronze-300); }
+  .row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .m { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 4px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+  .dot { width: 30px; height: 30px; border-radius: 50%; }
+  .m span { font-size: 10px; color: var(--text-muted); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+  .m.threat { border-color: rgba(179, 49, 63, 0.5); background: rgba(139, 30, 45, 0.12); }
+  .m.threat span { color: var(--threat-text); font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="m"><div class="dot" style="background: var(--mod-dawn); box-shadow: 0 0 16px var(--mod-dawn);"></div><span>dawn</span></div>
+    <div class="m"><div class="dot" style="background: var(--mod-day); box-shadow: 0 0 16px var(--mod-day);"></div><span>day</span></div>
+    <div class="m"><div class="dot" style="background: var(--mod-dusk); box-shadow: 0 0 16px var(--mod-dusk);"></div><span>dusk</span></div>
+    <div class="m"><div class="dot" style="background: var(--mod-night); box-shadow: 0 0 16px var(--mod-night);"></div><span>night</span></div>
+    <div class="m"><div class="dot" style="background: var(--mod-rain); box-shadow: 0 0 16px var(--mod-rain);"></div><span>rain</span></div>
+    <div class="m"><div class="dot" style="background: var(--mod-storm); box-shadow: 0 0 16px var(--mod-storm);"></div><span>storm</span></div>
+    <div class="m"><div class="dot" style="background: var(--mod-degraded); box-shadow: 0 0 16px var(--mod-degraded);"></div><span>degraded</span></div>
+    <div class="m threat"><div class="dot" style="background: var(--mod-threat); box-shadow: 0 0 16px var(--mod-threat);"></div><span>threat</span></div>
+  </div>
+</body>
+</html>

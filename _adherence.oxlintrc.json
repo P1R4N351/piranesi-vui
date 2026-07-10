@@ -1,0 +1,221 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/orb/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Cormorant Garamond|IBM Plex Mono))/i]",
+        "message": "Font not provided by the design system. Available: Cormorant Garamond, IBM Plex Mono."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PiranesiOrb'] > JSXAttribute > JSXIdentifier[name!=/^(?:state|modulation|audio|intensity|showGlyph|color|offsetX|style|key|ref|className|style|children)$/]",
+        "message": "<PiranesiOrb> doesn't accept that prop. Declared props: state, modulation, audio, intensity, showGlyph, color, offsetX, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PiranesiOrb'] > JSXAttribute[name.name='state'] > Literal[value!=/^(?:waiting|listening|thinking|talking|working|error)$/]",
+        "message": "<PiranesiOrb> state must be one of 'waiting' | 'listening' | 'thinking' | 'talking' | 'working' | 'error'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PiranesiOrb'] > JSXAttribute[name.name='modulation'] > Literal[value!=/^(?:auto|none|dawn|day|dusk|night|rain|storm|degraded|threat)$/]",
+        "message": "<PiranesiOrb> modulation must be one of 'auto' | 'none' | 'dawn' | 'day' | 'dusk' | 'night' | 'rain' | 'storm' | 'degraded' | 'threat'."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "PiranesiOrb": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--accent",
+      "--border-hairline",
+      "--border-strong",
+      "--border-subtle",
+      "--bronze-200",
+      "--bronze-300",
+      "--bronze-400",
+      "--bronze-500",
+      "--bronze-600",
+      "--bronze-700",
+      "--bronze-800",
+      "--dur-breath",
+      "--dur-fast",
+      "--dur-state",
+      "--ease-drift",
+      "--ease-fluid",
+      "--ease-swell",
+      "--font-display",
+      "--font-mono",
+      "--font-ui",
+      "--glow-accent",
+      "--leading-normal",
+      "--leading-tight",
+      "--mod-dawn",
+      "--mod-day",
+      "--mod-degraded",
+      "--mod-dusk",
+      "--mod-night",
+      "--mod-rain",
+      "--mod-storm",
+      "--mod-threat",
+      "--mood-error",
+      "--mood-listening",
+      "--mood-talking",
+      "--mood-thinking",
+      "--mood-waiting",
+      "--mood-working",
+      "--navy-500",
+      "--navy-600",
+      "--navy-700",
+      "--navy-800",
+      "--navy-900",
+      "--navy-950",
+      "--radius-md",
+      "--radius-pill",
+      "--radius-round",
+      "--radius-sm",
+      "--space-1",
+      "--space-2",
+      "--space-3",
+      "--space-4",
+      "--space-5",
+      "--space-6",
+      "--space-7",
+      "--space-8",
+      "--surface-base",
+      "--surface-deep",
+      "--surface-raised",
+      "--text-2xl",
+      "--text-3xl",
+      "--text-body",
+      "--text-display",
+      "--text-lg",
+      "--text-md",
+      "--text-muted",
+      "--text-sm",
+      "--text-xl",
+      "--text-xs",
+      "--threat-surface",
+      "--threat-text",
+      "--tracking-caps"
+    ],
+    "tokenKinds": {
+      "--navy-950": "color",
+      "--navy-900": "color",
+      "--navy-800": "color",
+      "--navy-700": "color",
+      "--navy-600": "color",
+      "--navy-500": "color",
+      "--bronze-200": "color",
+      "--bronze-300": "color",
+      "--bronze-400": "color",
+      "--bronze-500": "color",
+      "--bronze-600": "color",
+      "--bronze-700": "color",
+      "--bronze-800": "color",
+      "--mood-waiting": "color",
+      "--mood-listening": "color",
+      "--mood-thinking": "color",
+      "--mood-talking": "color",
+      "--mood-working": "color",
+      "--mood-error": "color",
+      "--mod-dawn": "color",
+      "--mod-day": "color",
+      "--mod-dusk": "color",
+      "--mod-night": "color",
+      "--mod-rain": "color",
+      "--mod-storm": "color",
+      "--mod-degraded": "color",
+      "--mod-threat": "color",
+      "--threat-text": "font",
+      "--threat-surface": "color",
+      "--surface-base": "color",
+      "--surface-deep": "color",
+      "--surface-raised": "color",
+      "--text-display": "font",
+      "--text-body": "font",
+      "--text-muted": "font",
+      "--accent": "color",
+      "--border-subtle": "color",
+      "--border-strong": "color",
+      "--glow-accent": "color",
+      "--font-display": "font",
+      "--font-ui": "font",
+      "--font-mono": "font",
+      "--text-xs": "font",
+      "--text-sm": "font",
+      "--text-md": "font",
+      "--text-lg": "font",
+      "--text-xl": "font",
+      "--text-2xl": "font",
+      "--text-3xl": "font",
+      "--leading-tight": "font",
+      "--leading-normal": "font",
+      "--tracking-caps": "font",
+      "--space-1": "spacing",
+      "--space-2": "spacing",
+      "--space-3": "spacing",
+      "--space-4": "spacing",
+      "--space-5": "spacing",
+      "--space-6": "spacing",
+      "--space-7": "spacing",
+      "--space-8": "spacing",
+      "--radius-sm": "radius",
+      "--radius-md": "radius",
+      "--radius-pill": "radius",
+      "--radius-round": "radius",
+      "--border-hairline": "color",
+      "--ease-fluid": "other",
+      "--ease-drift": "other",
+      "--ease-swell": "other",
+      "--dur-fast": "other",
+      "--dur-state": "other",
+      "--dur-breath": "other"
+    },
+    "fontFamilies": [
+      "Cormorant Garamond",
+      "IBM Plex Mono"
+    ]
+  }
+}

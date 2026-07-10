@@ -1,0 +1,6 @@
+{
+  "projectId": "8af39666-f588-49a2-a32d-e8e57314f5e5",
+  "projectName": "Piranesi VUI Design System",
+  "shape": "prebuilt",
+  "note": "Repo root IS the upload layout (hand-authored in the Design app, mirrored down 2026-07-10). No converter build step — sync = direct file push of the repo tree. See .design-sync/NOTES.md."
+}

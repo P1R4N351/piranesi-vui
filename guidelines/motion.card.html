@@ -1,0 +1,29 @@
+<!-- @dsCard group="Foundations" viewport="700x130" name="Motion" subtitle="Fluid morphs, never cuts — breathing is the resting tempo" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-deep); font-family: var(--font-mono); padding: 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+  a { color: var(--bronze-400); } a:hover { color: var(--bronze-300); }
+  .lane { display: flex; align-items: center; gap: 14px; }
+  .lane span { font-size: 10px; color: var(--text-muted); width: 190px; }
+  .track { flex: 1; height: 14px; position: relative; }
+  .ball { position: absolute; top: 1px; width: 12px; height: 12px; border-radius: 50%; background: var(--bronze-500); box-shadow: 0 0 10px var(--glow-accent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .a1 { animation: slide 1.8s var(--ease-fluid) infinite alternate; }
+    .a2 { animation: slide 3.2s var(--ease-drift) infinite alternate; }
+    .a3 { animation: breathe var(--dur-breath) ease-in-out infinite; left: 0; }
+  }
+  @keyframes slide { from { left: 0; } to { left: calc(100% - 12px); } }
+  @keyframes breathe { 0%, 100% { transform: scale(1); opacity: 0.55; } 50% { transform: scale(1.7); opacity: 1; } }
+</style>
+</head>
+<body>
+  <div class="lane"><span>--ease-fluid · 180–650ms</span><div class="track"><div class="ball a1"></div></div></div>
+  <div class="lane"><span>--ease-drift · ambient</span><div class="track"><div class="ball a2"></div></div></div>
+  <div class="lane"><span>--dur-breath · 4.2s resting pulse</span><div class="track"><div class="ball a3"></div></div></div>
+</body>
+</html>

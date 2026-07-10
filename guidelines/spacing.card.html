@@ -1,0 +1,36 @@
+<!-- @dsCard group="Foundations" viewport="700x130" name="Spacing & Radii" subtitle="4px base scale; round is the signature radius" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-deep); font-family: var(--font-mono); padding: 16px 24px; display: flex; align-items: center; gap: 28px; }
+  a { color: var(--bronze-400); } a:hover { color: var(--bronze-300); }
+  .bars { display: flex; align-items: flex-end; gap: 8px; }
+  .bar { background: var(--bronze-600); width: 14px; border-radius: 2px 2px 0 0; }
+  .bars span { font-size: 9px; color: var(--text-muted); display: block; text-align: center; margin-top: 4px; }
+  .r { display: flex; gap: 12px; align-items: center; }
+  .rbox { border: 1px solid var(--border-strong); background: var(--navy-600); width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="bars">
+    <div><div class="bar" style="height: 4px;"></div><span>1</span></div>
+    <div><div class="bar" style="height: 8px;"></div><span>2</span></div>
+    <div><div class="bar" style="height: 12px;"></div><span>3</span></div>
+    <div><div class="bar" style="height: 16px;"></div><span>4</span></div>
+    <div><div class="bar" style="height: 24px;"></div><span>5</span></div>
+    <div><div class="bar" style="height: 32px;"></div><span>6</span></div>
+    <div><div class="bar" style="height: 48px;"></div><span>7</span></div>
+    <div><div class="bar" style="height: 64px;"></div><span>8</span></div>
+  </div>
+  <div class="r">
+    <div class="rbox" style="border-radius: var(--radius-sm);">sm</div>
+    <div class="rbox" style="border-radius: var(--radius-md);">md</div>
+    <div class="rbox" style="border-radius: var(--radius-pill); width: 84px; height: 40px;">pill</div>
+    <div class="rbox" style="border-radius: var(--radius-round);">round</div>
+  </div>
+</body>
+</html>
