@@ -1,0 +1,53 @@
+/* Piranesi VUI — color tokens. Bronze on dark navy. */
+:root {
+  /* Navy scale (base surface family) */
+  --navy-950: #0A1226;
+  --navy-900: #0E1A38;
+  --navy-800: #122143;
+  --navy-700: #16294d; /* brand navy */
+  --navy-600: #1E3560;
+  --navy-500: #2A4478;
+
+  /* Bronze scale (brand accent family) */
+  --bronze-200: #EEDCC4;
+  --bronze-300: #E3C9A8;
+  --bronze-400: #D3B28D;
+  --bronze-500: #C39C72; /* brand bronze */
+  --bronze-600: #A98156;
+  --bronze-700: #8A6742;
+  --bronze-800: #64492E;
+
+  /* Mood hues — the orb (and any state UI) shifts toward these.
+     All are bronze-adjacent in lightness so transitions stay fluid. */
+  --mood-waiting:   #8F8168; /* dim, desaturated bronze — at rest */
+  --mood-listening: #86C7B0; /* verdigris — attentive, cool patina */
+  --mood-thinking:  #9D93D6; /* muted violet — inward, deliberating */
+  --mood-talking:   #E5B96E; /* lit gold — outward, speaking */
+  --mood-working:   #D98E5F; /* copper — effortful, in motion */
+  --mood-error:     #D9705F; /* terracotta — something went wrong */
+
+  /* Context modulations — a second axis layered over any mood.
+     Time of day (auto), weather, system status, and threat. */
+  --mod-dawn:     #E8A98C; /* rose-gold first light */
+  --mod-day:      #F0DCBE; /* bright, neutral */
+  --mod-dusk:     #C97F4F; /* deep amber */
+  --mod-night:    #7C8BAA; /* cool, dimmed, quiet hours */
+  --mod-rain:     #7FA3B8; /* washed slate-blue */
+  --mod-storm:    #6E7F9E; /* gusty grey-blue */
+  --mod-degraded: #C9A23F; /* amber caution — system impaired */
+  --mod-threat:   #8B1E2D; /* dark crimson — pufferfish mode */
+  --threat-text:  #FF8577; /* all-caps warning text on navy */
+  --threat-surface: #2A0E14; /* crimson-black vignette base */
+
+  /* Semantic aliases */
+  --surface-base: var(--navy-700);
+  --surface-deep: var(--navy-900);
+  --surface-raised: var(--navy-600);
+  --text-display: var(--bronze-300);
+  --text-body: #D7CDBD;
+  --text-muted: #8E8A80;
+  --accent: var(--bronze-500);
+  --border-subtle: rgba(195, 156, 114, 0.22);
+  --border-strong: rgba(195, 156, 114, 0.5);
+  --glow-accent: rgba(195, 156, 114, 0.35);
+}
