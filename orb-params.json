@@ -1,0 +1,89 @@
+{
+  "_comment": "Canonical Piranesi VUI orb parameters. Source of truth is components/orb/PiranesiOrb.jsx (compiled to _ds_bundle.js); THIS file is a machine-readable mirror of the numbers in that authoritative source. Generated consumers (the native Android Kotlin orb) derive from this file. Guardrails: scripts/verify-orb-params.py asserts these numbers still equal the bundle (fail loud); scripts/gen-kotlin-orb.py emits the Kotlin tables from this file; scripts/verify-ds-sync.sh keeps the vendored web bundles byte-identical to the canonical.",
+  "_source": "components/orb/PiranesiOrb.jsx",
+  "radiusFrac": 0.34,
+  "lerpTau": 0.25,
+  "audioTau": 0.07,
+  "envDriveScale": 2.1,
+  "gustScale": 0.7,
+  "flickerScale": 0.3,
+  "glyphPaths": [
+    "M23 39 L43 28 L63 39",
+    "M30 45 L30 69",
+    "M43 45 L43 69",
+    "M56 45 L56 69",
+    "M19 72 L67 72"
+  ],
+  "glyphPolylines": [
+    [[23, 39], [43, 28], [63, 39]],
+    [[30, 45], [30, 69]],
+    [[43, 45], [43, 69]],
+    [[56, 45], [56, 69]],
+    [[19, 72], [67, 72]]
+  ],
+  "glyphCenter": { "x": 43, "y": 50 },
+  "glyphViewBox": 86,
+  "glyphStrokeWidth": 5.5,
+  "ks": [2, 3, 5, 8, 11],
+  "ws": [0.7, 0.9, 1.3, 1.9, 2.6],
+  "spike": {
+    "harmonic": 9,
+    "power": 6,
+    "scale": 0.085,
+    "spinMul": 2.5,
+    "waveMul": 0.7,
+    "envMul": 0.35,
+    "threshold": 0.004
+  },
+  "moodFallbacks": {
+    "waiting": "#8F8168",
+    "listening": "#86C7B0",
+    "thinking": "#9D93D6",
+    "talking": "#E5B96E",
+    "working": "#D98E5F",
+    "error": "#D9705F"
+  },
+  "modFallbacks": {
+    "dawn": "#E8A98C",
+    "day": "#F0DCBE",
+    "dusk": "#C97F4F",
+    "night": "#7C8BAA",
+    "rain": "#7FA3B8",
+    "storm": "#6E7F9E",
+    "degraded": "#C9A23F",
+    "threat": "#8B1E2D"
+  },
+  "threatTokens": {
+    "modThreat": "#8B1E2D",
+    "threatText": "#FF8577",
+    "threatSurface": "#2A0E14"
+  },
+  "threatCopy": "YOU ARE NOT KNOWN TO THIS HOUSE",
+  "stateKeys": [
+    "glow", "alpha", "breathAmp", "breathHz", "spin", "ripple",
+    "comet", "envelope", "audioW", "glyphBase", "glyphPulse", "speed"
+  ],
+  "states": {
+    "waiting":   { "glow": 10, "alpha": 0.72, "breathAmp": 0.022, "breathHz": 0.24, "amps": [0.006, 0.004, 0.003, 0.002, 0.0],   "spin": 0.05, "ripple": 0, "comet": 0, "envelope": 0, "audioW": 0.20, "glyphBase": 0.55, "glyphPulse": 0.10, "speed": 0.5 },
+    "listening": { "glow": 26, "alpha": 0.95, "breathAmp": 0.012, "breathHz": 0.50, "amps": [0.010, 0.008, 0.012, 0.016, 0.0],   "spin": 0.12, "ripple": 1, "comet": 0, "envelope": 0, "audioW": 0.90, "glyphBase": 0.90, "glyphPulse": 0.08, "speed": 1.6 },
+    "thinking":  { "glow": 20, "alpha": 0.85, "breathAmp": 0.010, "breathHz": 0.35, "amps": [0.012, 0.050, 0.010, 0.004, 0.0],   "spin": 0.45, "ripple": 0, "comet": 0, "envelope": 0, "audioW": 0.25, "glyphBase": 0.70, "glyphPulse": 0.25, "speed": 0.9 },
+    "talking":   { "glow": 30, "alpha": 1.00, "breathAmp": 0.008, "breathHz": 0.80, "amps": [0.020, 0.014, 0.022, 0.024, 0.006], "spin": 0.20, "ripple": 0, "comet": 0, "envelope": 1, "audioW": 1.00, "glyphBase": 0.95, "glyphPulse": 0.50, "speed": 2.4 },
+    "working":   { "glow": 22, "alpha": 0.90, "breathAmp": 0.010, "breathHz": 0.60, "amps": [0.012, 0.010, 0.014, 0.008, 0.004], "spin": 0.90, "ripple": 0, "comet": 1, "envelope": 0, "audioW": 0.35, "glyphBase": 0.80, "glyphPulse": 0.12, "speed": 1.3 },
+    "error":     { "glow": 16, "alpha": 0.85, "breathAmp": 0.006, "breathHz": 0.30, "amps": [0.008, 0.006, 0.006, 0.010, 0.030], "spin": 0.08, "ripple": 0, "comet": 0, "envelope": 0, "audioW": 0.25, "glyphBase": 0.75, "glyphPulse": 0.20, "speed": 2.8 }
+  },
+  "modKeys": [
+    "w", "ampMul", "speedMul", "glowMul", "alphaMul",
+    "radiusMul", "spikes", "drops", "flicker", "gust"
+  ],
+  "mods": {
+    "none":     { "w": 0.00, "ampMul": 1.00, "speedMul": 1.00, "glowMul": 1.00, "alphaMul": 1.00, "radiusMul": 1.00, "spikes": 0, "drops": 0, "flicker": 0.00, "gust": 0.0 },
+    "dawn":     { "w": 0.35, "ampMul": 0.90, "speedMul": 0.90, "glowMul": 1.10, "alphaMul": 1.00, "radiusMul": 1.00, "spikes": 0, "drops": 0, "flicker": 0.00, "gust": 0.0 },
+    "day":      { "w": 0.25, "ampMul": 1.00, "speedMul": 1.00, "glowMul": 1.15, "alphaMul": 1.00, "radiusMul": 1.00, "spikes": 0, "drops": 0, "flicker": 0.00, "gust": 0.0 },
+    "dusk":     { "w": 0.40, "ampMul": 0.90, "speedMul": 0.90, "glowMul": 0.95, "alphaMul": 0.95, "radiusMul": 1.00, "spikes": 0, "drops": 0, "flicker": 0.00, "gust": 0.0 },
+    "night":    { "w": 0.45, "ampMul": 0.70, "speedMul": 0.75, "glowMul": 0.70, "alphaMul": 0.75, "radiusMul": 0.96, "spikes": 0, "drops": 0, "flicker": 0.00, "gust": 0.0 },
+    "rain":     { "w": 0.40, "ampMul": 0.90, "speedMul": 0.85, "glowMul": 0.90, "alphaMul": 0.90, "radiusMul": 1.00, "spikes": 0, "drops": 1, "flicker": 0.00, "gust": 0.0 },
+    "storm":    { "w": 0.50, "ampMul": 1.25, "speedMul": 1.20, "glowMul": 1.05, "alphaMul": 0.95, "radiusMul": 1.00, "spikes": 0, "drops": 1, "flicker": 0.50, "gust": 1.0 },
+    "degraded": { "w": 0.50, "ampMul": 0.75, "speedMul": 0.70, "glowMul": 0.85, "alphaMul": 0.80, "radiusMul": 0.97, "spikes": 0, "drops": 0, "flicker": 0.35, "gust": 0.0 },
+    "threat":   { "w": 0.88, "ampMul": 1.35, "speedMul": 1.50, "glowMul": 1.50, "alphaMul": 1.00, "radiusMul": 1.14, "spikes": 1, "drops": 0, "flicker": 0.15, "gust": 0.3 }
+  }
+}

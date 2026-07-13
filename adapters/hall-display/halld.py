@@ -58,6 +58,22 @@ for part in UNITS_SPEC.split(","):
 PRIORITY = {"talking": 5, "thinking": 4, "listening": 3,
             "working": 2, "waiting": 1, "error": 0}
 
+# Context modulation is a household-wide posture, so it merges by SEVERITY, not
+# by which unit is loudest: any unit reporting "threat" puts the whole house in
+# threat; "degraded" outranks the default "auto". Values come from each unit's
+# voxd /status.modulation (contract: auto | degraded | threat). Unknown/future
+# values fall through to "auto" so an older display never mis-renders.
+MOD_SEVERITY = {"threat": 2, "degraded": 1, "auto": 0}
+
+
+def merge_modulation(current, reported):
+    """Fold one unit's reported modulation into the house posture so far."""
+    if reported == "threat":
+        return "threat"
+    if reported == "degraded" and current != "threat":
+        return "degraded"
+    return current
+
 
 def _ts(iso):
     if not iso:
@@ -110,11 +126,13 @@ class HallState:
         last_activity = 0.0
         intercom_live = False
         any_reachable = False
+        modulation = "auto"
         for name, u in units.items():
             if not u["reachable"]:
                 continue
             any_reachable = True
             st = u["status"]
+            modulation = merge_modulation(modulation, st.get("modulation"))
             if st.get("intercom", {}).get("active"):
                 intercom_live = True
             last_activity = max(last_activity, _ts(st.get("last_transcript_at")))
@@ -136,6 +154,7 @@ class HallState:
             "state": state,
             "caption": caption,
             "source_unit": unit,
+            "modulation": modulation,
             "wake_active": bool(wake_active),
             "last_activity_at": last_activity or None,
             "intercom_live": intercom_live,

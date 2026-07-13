@@ -15,6 +15,17 @@
   var POLL_MS = 400;
   var ERROR_AFTER_FAILS = 5;
 
+  // Context modulation for the orb. halld merges /vox/status.modulation across
+  // units (auto | degraded | threat); we honor it, so a household threat signal
+  // renders pufferfish mode here. Absent field => legacy behavior: "auto"
+  // (clock-driven), or "degraded" when the voices have gone silent.
+  function modulationFor(st, state) {
+    var m = st && typeof st.modulation === "string" ? st.modulation : "";
+    if (m === "threat" || m === "degraded" || m === "auto") return m;
+    if (state === "error") return "degraded";
+    return "auto";
+  }
+
   function Hall() {
     var s = React.useState(null);
     var status = s[0], setStatus = s[1];
@@ -39,13 +50,14 @@
     var state = st.state || "waiting";
     var caption = st.caption || (state === "error" ? "The voices of the house are silent." : "");
     var unit = st.source_unit;
+    var modulation = modulationFor(st, state);
 
     var children = [
       e("div", { key: "orb", style: { position: "absolute", inset: 0 } },
         PiranesiOrb
           ? e(PiranesiOrb, {
               state: state,
-              modulation: "auto",
+              modulation: modulation,
               offsetX: caption ? -0.26 : 0,
             })
           : e("div", { style: { color: "#D9705F", padding: 40, fontFamily: "monospace" } },

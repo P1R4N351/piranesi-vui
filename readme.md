@@ -40,6 +40,39 @@ The columned-house glyph is the only icon — there is no icon set, no icon font
 ### Intentional additions
 None beyond the orb — the product has no other UI. Chips/captions in the kit are demo scaffolding, styled from tokens.
 
+## Runtime modulation feed (threat is reachable)
+
+The orb's `modulation` prop is driven at runtime from the household voice daemon.
+Contract: **`/vox/status.modulation ∈ {"auto", "degraded", "threat"}`** (produced
+by voxd; more values may follow). Every host reads it and passes it to the orb:
+
+- **Vivid-unit kiosk** (`kiosk.js` `modulationFor`) — polls the device's voxd proxy.
+- **Branch-0 hall** (`hall.js` `modulationFor`) — polls `halld`, which merges the
+  field across units by SEVERITY (any unit's `threat` puts the whole house in
+  threat; `degraded` outranks `auto`).
+- **Native Android** (`VoiceTabScreen` → `PiranesiOrb(modulation=…)`) — from app
+  state; a backend threat signal renders pufferfish mode with the ALL-CAPS copy.
+
+So when voxd reports `modulation:"threat"`, all three orbs render pufferfish
+threat mode. Absent field ⇒ back-compat (`auto`, or `degraded` when impaired).
+
+## Deriving & drift-proofing
+
+Every rendered orb descends from ONE source; drift is caught by construction:
+
+- **Canonical**: `components/orb/PiranesiOrb.jsx` → compiled `_ds_bundle.js` + `tokens/`.
+- **Web consumers** vendor a byte-identical `web/ds/` copy (see `scripts/ds-consumers.txt`).
+  `scripts/sync-ds.sh` writes them from canonical; `scripts/verify-ds-sync.sh` fails
+  loud on any mismatch.
+- **Native Android** derives its data tables from `orb-params.json` (a mirror of the
+  bundle numbers, held honest by `scripts/verify-orb-params.py`) via
+  `scripts/gen-kotlin-orb.py` → `PiranesiOrbParams.kt` in the astroclaw-vui-orb repo.
+- **Pre-deploy / CI gate**: `scripts/verify-all.sh` (and `scripts/test_ds_sync.py` for
+  the in-repo half) proves all three derivations before shipping.
+
+Never hand-edit a vendored bundle, `orb-params.json` out of step with the JSX, or the
+generated Kotlin. Edit the JSX/bundle, then `sync-ds.sh` + `sync-android-orb.sh`.
+
 ## Index
 
 - `styles.css` → imports `tokens/{colors,typography,spacing,motion}.css`

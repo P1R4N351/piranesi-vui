@@ -139,6 +139,22 @@ class HalldTest(unittest.TestCase):
         self.assertEqual(m["caption"], "Intercom open.")
         self.va.status["intercom"] = {"active": False}
 
+    def test_5b_modulation_merges_by_severity(self):
+        # Contract: /vox/status.modulation in {auto,degraded,threat}. The house is
+        # a single posture, merged by SEVERITY: any unit reporting threat puts the
+        # whole house in threat; degraded outranks the default auto.
+        self.assertEqual(self.api("/vox/status").get("modulation"), "auto")
+        self.vb.status["modulation"] = "degraded"
+        self.assertTrue(wait_for(
+            lambda: self.api("/vox/status")["modulation"] == "degraded"))
+        self.va.status["modulation"] = "threat"
+        self.assertTrue(wait_for(
+            lambda: self.api("/vox/status")["modulation"] == "threat"))
+        self.va.status.pop("modulation", None)
+        self.vb.status.pop("modulation", None)
+        self.assertTrue(wait_for(
+            lambda: self.api("/vox/status")["modulation"] == "auto"))
+
     def test_6_both_dead_shows_error(self):
         self.va.srv.shutdown()
         self.vb.srv.shutdown()

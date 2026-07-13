@@ -1,0 +1,15 @@
+# Piranesi VUI — design-system bundle consumers.
+#
+# Every web host that renders the orb vendors a byte-for-byte copy of the
+# canonical DS bundle under its own web/ds/ directory. This manifest is the
+# authoritative list of those copies; sync-ds.sh writes them from canonical and
+# verify-ds-sync.sh fails loud if any has drifted. "Matches by luck" -> "matches
+# by construction."
+#
+# Format (whitespace-separated):  <class>  <ds-dir>
+#   repo      = path relative to the repo root. MUST exist and match (verify FAILS).
+#   external  = absolute path outside the repo (e.g. a staged seed image). Synced
+#               and verified only when present; absence is a NOTE, not a failure,
+#               because the path is host-dependent.
+repo      adapters/hall-display/web/ds
+external  /home/s/Piranesi/openclaw/workspace/state/contrib-staging/vivid-unit-seed/interface-payload/opt/piranesi/vui-kiosk/web/ds
