@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"PiranesiVUIDesignSystem_8af396","components":[{"name":"PiranesiOrb","sourcePath":"components/orb/PiranesiOrb.jsx"}],"sourceHashes":{"components/orb/PiranesiOrb.jsx":"1dfcc56771a1"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"PiranesiVUIDesignSystem_8af396","components":[{"name":"PiranesiOrb","sourcePath":"components/orb/PiranesiOrb.jsx"}],"sourceHashes":{"components/orb/PiranesiOrb.jsx":"488b92d1aca4"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -166,6 +166,18 @@ const STATES = {
   }
 };
 const STATE_KEYS = ["glow", "alpha", "breathAmp", "breathHz", "spin", "ripple", "comet", "envelope", "audioW", "glyphBase", "glyphPulse", "speed"];
+
+// Transitions that earn a spin flourish — a decaying rotational kick of the
+// rim pattern. Only meaningful resolutions, not every state change.
+const FLOURISHES = {
+  "working>waiting": 1,
+  // task done, settling back
+  "working>listening": 1,
+  // task done, back to you
+  "working>talking": 1,
+  // task done, reporting
+  "thinking>talking": 1 // answer arrived
+};
 
 // Context modulations — layered over any state.
 // w: tint blend weight toward the mod color. spikes: pufferfish quills.
@@ -364,6 +376,8 @@ function PiranesiOrb({
       wavePhase = 0,
       rippleTimer = 0,
       dropTimer = 0;
+    let spinKick = 0,
+      prevState = live.current.state;
     const ripples = [],
       droplets = [];
 
@@ -454,6 +468,10 @@ function PiranesiOrb({
         offsetX: offT
       } = live.current;
       const target = STATES[st] || STATES.waiting;
+      if (st !== prevState) {
+        if (FLOURISHES[prevState + ">" + st]) spinKick += 8.5;
+        prevState = st;
+      }
       const modName = resolveModulation(mo);
       const mp = MODS[modName];
       const tCol = colOverride ? hexToRgb(colOverride) : cssMood(st);
@@ -470,7 +488,8 @@ function PiranesiOrb({
       }
       cur.off += ((offT || 0) - cur.off) * k * 0.55;
       cur.gOp += ((glyphOn ? 1 : 0) - cur.gOp) * k;
-      spinPhase += cur.spin * cur.speedMul * dt;
+      spinPhase += (cur.spin * cur.speedMul + spinKick) * dt;
+      spinKick *= Math.exp(-dt / 0.5);
       wavePhase += cur.speed * cur.speedMul * dt;
 
       // --- audio level (real signal), else pseudo speech envelope ---
