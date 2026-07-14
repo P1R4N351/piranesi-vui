@@ -60,18 +60,21 @@ PRIORITY = {"talking": 5, "thinking": 4, "listening": 3,
 
 # Context modulation is a household-wide posture, so it merges by SEVERITY, not
 # by which unit is loudest: any unit reporting "threat" puts the whole house in
-# threat; "degraded" outranks the default "auto". Values come from each unit's
-# voxd /status.modulation (contract: auto | degraded | threat). Unknown/future
-# values fall through to "auto" so an older display never mis-renders.
-MOD_SEVERITY = {"threat": 2, "degraded": 1, "auto": 0}
+# threat; "degraded" outranks weather, which outranks the default "auto". Values
+# come from each unit's voxd /status.modulation (contract: auto | degraded | rain |
+# storm | threat, precedence threat > degraded > storm > rain > auto — mirrors the
+# voxd resolver: a security posture and a broken chat lane both win over weather).
+# Unknown/future values map to severity 0 (auto) so an older display never
+# mis-renders a value it has no animation for.
+MOD_SEVERITY = {"threat": 4, "degraded": 3, "storm": 2, "rain": 1, "auto": 0}
 
 
 def merge_modulation(current, reported):
-    """Fold one unit's reported modulation into the house posture so far."""
-    if reported == "threat":
-        return "threat"
-    if reported == "degraded" and current != "threat":
-        return "degraded"
+    """Fold one unit's reported modulation into the house posture so far, by
+    SEVERITY (threat > degraded > storm > rain > auto). An unknown/absent reported
+    value is severity 0 and never lowers the current posture."""
+    if MOD_SEVERITY.get(reported, 0) > MOD_SEVERITY.get(current, 0):
+        return reported
     return current
 
 

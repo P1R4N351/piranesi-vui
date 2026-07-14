@@ -16,12 +16,14 @@
   var ERROR_AFTER_FAILS = 5;
 
   // Context modulation for the orb. halld merges /vox/status.modulation across
-  // units (auto | degraded | threat); we honor it, so a household threat signal
-  // renders pufferfish mode here. Absent field => legacy behavior: "auto"
-  // (clock-driven), or "degraded" when the voices have gone silent.
+  // units (auto | degraded | rain | storm | threat); we honor it, so a household
+  // threat signal renders pufferfish mode and real weather renders rain droplets /
+  // storm gusts here. Absent/unknown field => legacy behavior: "auto" (clock-driven),
+  // or "degraded" when the voices have gone silent.
+  var MOD_VALUES = { threat: 1, degraded: 1, storm: 1, rain: 1, auto: 1 };
   function modulationFor(st, state) {
     var m = st && typeof st.modulation === "string" ? st.modulation : "";
-    if (m === "threat" || m === "degraded" || m === "auto") return m;
+    if (MOD_VALUES[m]) return m;
     if (state === "error") return "degraded";
     return "auto";
   }
