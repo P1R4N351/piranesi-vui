@@ -11,20 +11,43 @@ import time
 import unittest
 import urllib.request
 
-# Configure BEFORE import: fast ticks, short window, mock units, fake power.
+# Configure BEFORE import: fast ticks, short window, mock units.
 TMP = tempfile.mkdtemp()
 POWER_LOG = os.path.join(TMP, "power.log")
-POWER_SH = os.path.join(TMP, "power.sh")
-with open(POWER_SH, "w") as f:
-    f.write("#!/bin/sh\necho \"$1\" >> %s\n" % POWER_LOG)
-os.chmod(POWER_SH, 0o755)
 os.environ.update({
     "HALL_VOX_UNITS": "unit-a=http://127.0.0.1:9681,unit-b=http://127.0.0.1:9682",
     "HALL_POLL_S": "0.2", "HALL_POWER_TICK_S": "0.3",
-    "HALL_WAKE_WINDOW_S": "5", "HALL_POWER_CMD": POWER_SH,
+    "HALL_WAKE_WINDOW_S": "5", "HALL_WAKE_RECENT_S": "5",
     "HALL_BIND": "127.0.0.1", "HALL_PORT": "0",
 })
 import halld  # noqa: E402
+
+# The occupancy-aware governor talks to sway directly (it must ENUMERATE
+# outputs, not just flip power), so the harness stubs the sway seam: a fake
+# output table whose `power` field the governor both reads (drift detection)
+# and drives, with every apply logged like the old fake power script.
+FAKE_SWAY = {"outputs": [{"name": "HDMI-A-2", "active": True, "power": True,
+                          "transform": "normal"}]}
+
+
+def _fake_sway_outputs():
+    return [dict(o) for o in FAKE_SWAY["outputs"]]
+
+
+def _fake_apply_display(on, transform=None, sel=None):
+    outs = FAKE_SWAY["outputs"]
+    if not outs:
+        return 0
+    for o in outs:
+        o["power"] = bool(on)
+    with open(POWER_LOG, "a") as f:
+        f.write(("on" if on else "off") + "\n")
+    return len(outs)
+
+
+halld.sway_outputs = _fake_sway_outputs
+halld.apply_display = _fake_apply_display
+halld.ensure_vui = lambda: None
 
 
 class MockVox(threading.Thread):
@@ -77,7 +100,7 @@ class HalldTest(unittest.TestCase):
         cls.pollers = [halld.UnitPoller(cls.state, n, u) for n, u in halld.UNITS]
         for p in cls.pollers:
             p.start()
-        cls.gov = halld.PowerGovernor(cls.state)
+        cls.gov = halld.DisplayGovernor(cls.state)
         cls.gov.start()
         srv = http.server.ThreadingHTTPServer(
             ("127.0.0.1", 0), halld.make_handler(cls.state))
@@ -154,6 +177,21 @@ class HalldTest(unittest.TestCase):
         self.vb.status.pop("modulation", None)
         self.assertTrue(wait_for(
             lambda: self.api("/vox/status")["modulation"] == "auto"))
+
+    def test_5c_external_power_on_is_reconciled(self):
+        # The 2026-07-15 bug: the daily kiosk restart restarts sway, which
+        # recreates the SAME output name powered ON — no hotplug edge, and the
+        # governor's own bookkeeping still said "off", so an edge-triggered
+        # governor left a dark empty hall lit all night. The governor must
+        # reconcile against the power state sway REPORTS and re-assert off.
+        self.assertTrue(wait_for(lambda: self.power_calls()[-1:] == ["off"], 8))
+        n = len(self.power_calls())
+        for o in FAKE_SWAY["outputs"]:
+            o["power"] = True                    # sway restarted: panel back on
+        self.assertTrue(wait_for(
+            lambda: len(self.power_calls()) > n
+            and self.power_calls()[-1] == "off"))
+        self.assertFalse(FAKE_SWAY["outputs"][0]["power"])
 
     def test_6_both_dead_shows_error(self):
         self.va.srv.shutdown()

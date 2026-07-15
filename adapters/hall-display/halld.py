@@ -503,11 +503,12 @@ class DisplayGovernor(threading.Thread):
     def run(self):
         while not self._stop.is_set():
             try:
-                names = sorted(o.get("name", "?") for o in sway_outputs())
+                outs = sway_outputs()
             except Exception as e:
-                names = []
+                outs = []
                 if self._last_outputs != []:
                     print("[halld] cannot enumerate outputs: %s" % e, flush=True)
+            names = sorted(o.get("name", "?") for o in outs)
             self.state.outputs = names
 
             want = self.state.merged()["want_display_on"]
@@ -518,8 +519,23 @@ class DisplayGovernor(threading.Thread):
                       % (self._last_outputs or "none", names or "none"), flush=True)
             self._last_outputs = names
 
+            # Reconcile against what sway REPORTS, not what we last commanded.
+            # A compositor restart (the daily kiosk chromium-leak restart)
+            # recreates the same output name powered ON: no hotplug edge, and
+            # our own bookkeeping still says "off" — so an edge-triggered
+            # governor leaves the panel lit until the next wake cycle.
+            actual_on = None
+            if outs:
+                actual_on = any(o.get("power", o.get("dpms")) for o in outs)
+            drift = actual_on is not None and actual_on != want
+            if drift and not hotplug:
+                print("[halld] power drift: sway reports %s, want %s "
+                      "(external change — re-asserting)"
+                      % ("on" if actual_on else "off", "on" if want else "off"),
+                      flush=True)
+
             stale_claim = current in (None, "absent", "error")
-            if hotplug or stale_claim or (current == "on") != want:
+            if hotplug or stale_claim or drift or (current == "on") != want:
                 self._apply(want)
             self._stop.wait(POWER_TICK_S)
 
