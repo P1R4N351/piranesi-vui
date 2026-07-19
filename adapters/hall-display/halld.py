@@ -105,6 +105,28 @@ WEB_ROOT = os.environ.get(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "web"))
 THINKING_HORIZON_S = 30  # transcript newer than reply => pipeline deliberating
 
+# ---- control-centre report panel ------------------------------------------
+# voxd POSTs a voice status report to /report; halld renders it as a panel
+# ALONGSIDE the orb for ttl_s seconds and counts the acceptance as display-wake
+# activity so the panel lights even if the screen was off. The wire contract is
+# FROZEN (voxd is the sender): title (<=60, required) + domain (enum) + spoken
+# (<=300) + tiles (<=8) + lines (<=6) + ttl_s (clamped 15..600, default 90).
+REPORT_DEFAULT_TTL_S = float(os.environ.get("HALL_REPORT_DEFAULT_TTL_S", "90"))
+REPORT_MIN_TTL_S = float(os.environ.get("HALL_REPORT_MIN_TTL_S", "15"))
+REPORT_MAX_TTL_S = float(os.environ.get("HALL_REPORT_MAX_TTL_S", "600"))
+REPORT_MAX_TILES = int(os.environ.get("HALL_REPORT_MAX_TILES", "8"))
+REPORT_MAX_LINES = int(os.environ.get("HALL_REPORT_MAX_LINES", "6"))
+# Hard ceiling on the POST body: a report is small; anything larger is a bug or
+# an attack, not a report. Read is bounded to exactly Content-Length <= this.
+REPORT_MAX_BODY = int(os.environ.get("HALL_REPORT_MAX_BODY", "16384"))
+REPORT_TITLE_MAX = 60      # per-field caps (frozen contract; not env genes)
+REPORT_SPOKEN_MAX = 300
+REPORT_TILE_LABEL_MAX = 24
+REPORT_TILE_VALUE_MAX = 16
+REPORT_LINE_MAX = 90
+REPORT_DOMAINS = ("overview", "fleet", "services", "spoolers",
+                  "alerts", "advisories", "sessions")
+
 UNITS = []
 for part in UNITS_SPEC.split(","):
     part = part.strip()
@@ -282,6 +304,107 @@ def want_on(wake_active, wake_recent, occ_state, dark_for_s):
     return False                                    # unknown: as it always was
 
 
+# ---- report validation ----------------------------------------------------
+# Pure functions: turn a POSTed body into a clean, bounded report or raise.
+# The contract's split is deliberate: the four "malformed" cases (missing/
+# overlong title, unknown domain, wrong types) are REJECTED (400); over-cap
+# tiles/lines and out-of-range ttl are TRUNCATED/CLAMPED with a loud warning.
+
+class ReportError(ValueError):
+    """A report body the contract rejects outright => HTTP 400."""
+
+
+def _clean_tiles(raw, warn):
+    """Validate + truncate the tile list (<= REPORT_MAX_TILES). Loud on trim."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ReportError("tiles must be a list")
+    if len(raw) > REPORT_MAX_TILES:
+        warn.append("tiles truncated %d->%d" % (len(raw), REPORT_MAX_TILES))
+    tiles = []
+    n = min(len(raw), REPORT_MAX_TILES)              # bounded loop
+    for i in range(n):
+        t = raw[i]
+        if not isinstance(t, dict):
+            raise ReportError("tile %d must be an object" % i)
+        label, value, ok = t.get("label"), t.get("value", ""), t.get("ok", None)
+        if not isinstance(label, str) or not label:
+            raise ReportError("tile %d needs a non-empty string label" % i)
+        if not isinstance(value, str):
+            raise ReportError("tile %d value must be a string" % i)
+        if ok not in (True, False, None):
+            raise ReportError("tile %d ok must be true/false/null" % i)
+        if len(label) > REPORT_TILE_LABEL_MAX:
+            warn.append("tile %d label truncated" % i)
+            label = label[:REPORT_TILE_LABEL_MAX]
+        if len(value) > REPORT_TILE_VALUE_MAX:
+            warn.append("tile %d value truncated" % i)
+            value = value[:REPORT_TILE_VALUE_MAX]
+        tiles.append({"label": label, "value": value, "ok": ok})
+    return tiles
+
+
+def _clean_lines(raw, warn):
+    """Validate + truncate the advisory lines (<= REPORT_MAX_LINES). Loud."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ReportError("lines must be a list")
+    if len(raw) > REPORT_MAX_LINES:
+        warn.append("lines truncated %d->%d" % (len(raw), REPORT_MAX_LINES))
+    lines = []
+    n = min(len(raw), REPORT_MAX_LINES)              # bounded loop
+    for i in range(n):
+        ln = raw[i]
+        if not isinstance(ln, str):
+            raise ReportError("line %d must be a string" % i)
+        if len(ln) > REPORT_LINE_MAX:
+            warn.append("line %d truncated" % i)
+            ln = ln[:REPORT_LINE_MAX]
+        lines.append(ln)
+    return lines
+
+
+def _clean_ttl(raw, warn):
+    """Clamp ttl_s to [MIN, MAX]; default when absent. bool is NOT a number."""
+    if raw is None:
+        return REPORT_DEFAULT_TTL_S
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        raise ReportError("ttl_s must be a number")
+    ttl = float(raw)
+    clamped = min(max(ttl, REPORT_MIN_TTL_S), REPORT_MAX_TTL_S)
+    if clamped != ttl:
+        warn.append("ttl_s clamped %g->%g" % (ttl, clamped))
+    return clamped
+
+
+def validate_report(doc):
+    """(report, warnings) or raise ReportError. The whole accept policy."""
+    if not isinstance(doc, dict):
+        raise ReportError("body must be a JSON object")
+    warn = []
+    title = doc.get("title")
+    if not isinstance(title, str) or not title.strip():
+        raise ReportError("title is required")
+    if len(title) > REPORT_TITLE_MAX:
+        raise ReportError("title exceeds %d chars" % REPORT_TITLE_MAX)
+    domain = doc.get("domain", "overview")
+    if not isinstance(domain, str) or domain not in REPORT_DOMAINS:
+        raise ReportError("unknown domain")
+    spoken = doc.get("spoken", "")
+    if not isinstance(spoken, str):
+        raise ReportError("spoken must be a string")
+    if len(spoken) > REPORT_SPOKEN_MAX:
+        warn.append("spoken truncated")
+        spoken = spoken[:REPORT_SPOKEN_MAX]
+    report = {"title": title, "domain": domain, "spoken": spoken,
+              "tiles": _clean_tiles(doc.get("tiles"), warn),
+              "lines": _clean_lines(doc.get("lines"), warn),
+              "ttl_s": _clean_ttl(doc.get("ttl_s"), warn)}
+    return report, warn
+
+
 class HallState:
     def __init__(self):
         self._lock = threading.Lock()
@@ -294,6 +417,36 @@ class HallState:
         self.outputs = []              # names of the outputs sway actually has
         self.occ = {"state": "unknown", "at": 0.0, "luma": None,
                     "reachable": False, "dark_since": None}
+        self.report = None             # last accepted report (retained on expiry)
+        self.report_until = 0.0        # epoch the panel stops being active
+        self.report_accepted_at = 0.0  # epoch of last accept (wake-activity mark)
+
+    def set_report(self, doc):
+        """Validate + store a report. Returns (until, warnings); raises
+        ReportError on a malformed body. The store also stamps `at`/`until`
+        into the retained copy so the page can render a timestamp and the
+        governor can treat it as wake activity."""
+        report, warn = validate_report(doc)
+        now = time.time()
+        until = now + report["ttl_s"]
+        stored = dict(report)
+        stored["at"] = now
+        stored["until"] = until
+        with self._lock:
+            self.report = stored
+            self.report_until = until
+            self.report_accepted_at = now      # counts as recent wake (governor)
+        return until, warn
+
+    def report_view(self):
+        """(active, report_or_None, until). `report` is the LAST accepted
+        report, retained after expiry (GET /report shows it); `active` flips
+        false once now >= until (the feed then hides the panel)."""
+        with self._lock:
+            rep = dict(self.report) if self.report else None
+            until = self.report_until
+        active = rep is not None and time.time() < until
+        return active, rep, until
 
     def occupancy(self):
         """(state, dark_for_s). `unknown` whenever the sensor cannot be trusted,
@@ -368,6 +521,14 @@ class HallState:
             last_activity and time.time() - last_activity < WAKE_WINDOW_S)
         wake_recent = intercom_live or (
             last_activity and time.time() - last_activity < WAKE_RECENT_S)
+        # A live report is active interaction: it must light the panel even in
+        # a dark, unoccupied room for its whole lifetime — exactly like a recent
+        # wake word. report_active is level-triggered off report_until, so when
+        # the report expires the governor reconciles back to the prior policy
+        # with no extra bookkeeping (same style as the occupancy trigger).
+        report_active, report_rep, report_until = self.report_view()
+        wake_active = bool(wake_active) or report_active
+        wake_recent = bool(wake_recent) or report_active
         state, caption, unit = best
         occ_state, dark_for = self.occupancy()
         return {
@@ -384,6 +545,9 @@ class HallState:
             "dark_for_s": round(dark_for, 1),
             "want_display_on": want_on(bool(wake_active), bool(wake_recent),
                                         occ_state, dark_for),
+            "report_active": report_active,
+            "report": report_rep if report_active else None,
+            "report_until": report_until if report_until else None,
             "outputs": list(self.outputs),
             "outputs_present": len(self.outputs),
             "display_power": self.display_power,
@@ -575,6 +739,10 @@ def make_handler(state):
                     "power_errors": state.power_errors})
             if self.path == "/vox/status":
                 return self._json(200, state.merged())
+            if self.path == "/report":        # last accepted report + liveness
+                active, rep, until = state.report_view()
+                return self._json(200, {"active": active, "report": rep,
+                                        "until": until if until else None})
             if self.path == "/occupancy":     # what the hall believes about the room
                 m = state.merged()
                 return self._json(200, {
@@ -599,6 +767,33 @@ def make_handler(state):
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+
+        def do_POST(self):
+            if self.path != "/report":
+                return self._json(404, {"ok": False, "error": "not found"})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except (TypeError, ValueError):
+                length = 0
+            if length <= 0 or length > REPORT_MAX_BODY:
+                return self._json(400, {"ok": False,
+                                        "error": "missing or oversized body"})
+            raw = self.rfile.read(length)          # bounded by REPORT_MAX_BODY
+            try:
+                doc = json.loads(raw.decode("utf-8", "ignore"))
+            except ValueError:
+                return self._json(400, {"ok": False, "error": "invalid JSON"})
+            try:
+                until, warn = state.set_report(doc)
+            except ReportError as e:
+                # Loud: a rejected report is a caller bug worth seeing in journald.
+                print("[halld] /report REJECTED: %s" % e, flush=True)
+                return self._json(400, {"ok": False, "error": str(e)})
+            print("[halld] /report accepted: title=%r domain=%s until=%.0f%s"
+                  % (doc.get("title"), doc.get("domain", "overview"), until,
+                     (" [adjusted: " + "; ".join(warn) + "]") if warn else ""),
+                  flush=True)
+            return self._json(200, {"ok": True, "until": until})
 
     return Handler
 

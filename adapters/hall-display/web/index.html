@@ -12,10 +12,30 @@
   html, body { margin: 0; height: 100%; background: var(--navy-950, #0A1226); overflow: hidden; cursor: none; }
   #root { height: 100%; }
   @keyframes pv-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* The orb animates as it yields space to the report panel (and back). */
+  .pv-orb { transition: width var(--dur-state, 650ms) var(--ease-swell, cubic-bezier(0.34,1.25,0.4,1)),
+                        height var(--dur-state, 650ms) var(--ease-swell, cubic-bezier(0.34,1.25,0.4,1)); }
+
+  /* Report panel entrance/exit — subtle slide + settle, per tokens/motion.css. */
+  @keyframes pv-report-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes pv-report-out {
+    from { opacity: 1; transform: none; }
+    to   { opacity: 0; transform: translateY(18px) scale(0.985); }
+  }
+  /* translateY on the portrait-docked (bottom) panel reads as a rise; on the
+     landscape panel the -50% centering transform is re-applied by React inline
+     style once the animation completes, so the keyframe only governs entry. */
+  .pv-report-in  { animation: pv-report-in  var(--dur-state, 650ms) var(--ease-swell, cubic-bezier(0.34,1.25,0.4,1)) both; }
+  .pv-report-out { animation: pv-report-out var(--dur-state, 650ms) var(--ease-fluid, cubic-bezier(0.4,0,0.2,1)) both; }
 </style>
 </head>
 <body>
 <div id="root"></div>
+<script src="report-panel.js"></script>
 <script src="hall.js"></script>
 </body>
 </html>

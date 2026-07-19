@@ -1,0 +1,112 @@
+<!-- @dsCard group="Components" viewport="700x520" name="ReportPanel" subtitle="Voice status report — tiles, advisories, ok/warn states" -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Same convention as components/orb/orb.card.html: two levels up to the
+     repo-root styles.css, which @imports the tokens. Renders standalone from
+     the file system — no server, no CDN, no build. -->
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  html, body { margin: 0; }
+  body { background: var(--surface-deep); font-family: var(--font-ui); padding: 14px;
+         display: flex; flex-direction: column; gap: 14px; }
+
+  /* The panel, re-expressed from adapters/hall-display/web/report-panel.js as
+     static markup so the design-sync preview matches the live render. */
+  .panel {
+    box-sizing: border-box; padding: var(--space-5);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-strong);
+    background: linear-gradient(160deg, var(--navy-800) 0%, var(--navy-900) 100%);
+    box-shadow: 0 18px 60px rgba(6, 10, 22, 0.55), inset 0 0 40px rgba(195, 156, 114, 0.05);
+    animation: pv-report-in var(--dur-state) var(--ease-swell) both;
+  }
+  @keyframes pv-report-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .hdr { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-4); }
+  .title { font-family: var(--font-display); font-size: 34px; line-height: 1.05;
+           color: var(--text-display); font-weight: 600; }
+  .meta { display: flex; align-items: center; gap: var(--space-3); }
+  .domain { font-size: var(--text-xs); color: var(--accent);
+            letter-spacing: var(--tracking-caps); text-transform: uppercase; }
+  .rule { flex: 1 1 auto; height: 1px; background: var(--border-subtle); }
+  .ts { font-family: var(--font-mono); font-size: var(--text-xs);
+        color: var(--text-muted); letter-spacing: 0.06em; }
+
+  .tiles { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .tiles.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tiles.c4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .tile { display: flex; flex-direction: column; gap: var(--space-1);
+          padding: var(--space-3); border-radius: var(--radius-md);
+          background: var(--navy-800); border-left: 3px solid var(--border-subtle); }
+  .tile.ok    { border-left-color: var(--bronze-500); box-shadow: inset 0 0 22px var(--glow-accent); }
+  .tile.bad   { border-left-color: var(--mood-error); box-shadow: inset 0 0 22px rgba(217, 112, 95, 0.35); }
+  .tile .l { font-size: var(--text-xs); color: var(--text-muted);
+             letter-spacing: var(--tracking-caps); text-transform: uppercase;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile .v { font-family: var(--font-display); font-size: 30px; line-height: 1.05;
+             color: var(--text-body); font-weight: 500; }
+  .tile.ok  .v { color: var(--bronze-200); }
+  .tile.bad .v { color: var(--mood-error); }
+
+  .lines { display: flex; flex-direction: column; }
+  .line { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; }
+  .line + .line { border-top: 1px solid var(--border-subtle); }
+  .dot { flex: 0 0 auto; width: 6px; height: 6px; margin-top: 2px; border-radius: var(--radius-round);
+         background: var(--bronze-500); box-shadow: 0 0 8px var(--glow-accent); }
+  .line .t { font-size: 15px; line-height: 1.4; color: var(--text-body); }
+
+  .stage-label { font-size: 10px; color: var(--text-muted);
+                 letter-spacing: var(--tracking-caps); text-transform: uppercase; margin: 2px; }
+</style>
+</head>
+<body>
+  <div class="stage-label">Healthy — overview</div>
+  <div class="panel">
+    <div class="hdr">
+      <div class="title">Household overview</div>
+      <div class="meta">
+        <span class="domain">overview</span>
+        <span class="rule"></span>
+        <span class="ts">21:04</span>
+      </div>
+    </div>
+    <div class="tiles c4">
+      <div class="tile ok"><span class="l">Siblings</span><span class="v">17</span></div>
+      <div class="tile ok"><span class="l">Anchors</span><span class="v">3/3</span></div>
+      <div class="tile"><span class="l">Alerts</span><span class="v">0</span></div>
+      <div class="tile ok"><span class="l">Load</span><span class="v">14.2</span></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="dot"></span><span class="t">gitea CT110 healthy — actions queue drained</span></div>
+      <div class="line"><span class="dot"></span><span class="t">branch-0 vox reattached, intercom idle</span></div>
+    </div>
+  </div>
+
+  <div class="stage-label">Degraded — alerts</div>
+  <div class="panel">
+    <div class="hdr">
+      <div class="title">Spooler fleet degraded</div>
+      <div class="meta">
+        <span class="domain">alerts</span>
+        <span class="rule"></span>
+        <span class="ts">21:09</span>
+      </div>
+    </div>
+    <div class="tiles c3">
+      <div class="tile ok"><span class="l">Nodes up</span><span class="v">16/17</span></div>
+      <div class="tile bad"><span class="l">Spoolers</span><span class="v">2 warn</span></div>
+      <div class="tile"><span class="l">Queue depth</span><span class="v">—</span></div>
+    </div>
+    <div class="lines">
+      <div class="line"><span class="dot"></span><span class="t">internode-0 spooler starved — missing priority header</span></div>
+      <div class="line"><span class="dot"></span><span class="t">branch-1 rig at host-RAM ceiling, shedding concurrency</span></div>
+      <div class="line"><span class="dot"></span><span class="t">trueblue HA fence disabled pending review</span></div>
+    </div>
+  </div>
+</body>
+</html>
