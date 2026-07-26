@@ -111,6 +111,9 @@ THINKING_HORIZON_S = 30  # transcript newer than reply => pipeline deliberating
 # activity so the panel lights even if the screen was off. The wire contract is
 # FROZEN (voxd is the sender): title (<=60, required) + domain (enum) + spoken
 # (<=300) + tiles (<=8) + lines (<=6) + ttl_s (clamped 15..600, default 90).
+# EXTENDED (additive, back-compat 2026-07-21): two optional element arrays —
+# cells (<=6 sibling-status cards {name,state,metrics}) + dials (<=6 usage gauges
+# {label,pct,value,sub,level}). Absent arrays render nothing; old senders unaffected.
 REPORT_DEFAULT_TTL_S = float(os.environ.get("HALL_REPORT_DEFAULT_TTL_S", "90"))
 REPORT_MIN_TTL_S = float(os.environ.get("HALL_REPORT_MIN_TTL_S", "15"))
 REPORT_MAX_TTL_S = float(os.environ.get("HALL_REPORT_MAX_TTL_S", "600"))
@@ -126,6 +129,19 @@ REPORT_TILE_VALUE_MAX = 16
 REPORT_LINE_MAX = 90
 REPORT_DOMAINS = ("overview", "fleet", "services", "spoolers",
                   "alerts", "advisories", "sessions")
+# Additive command-centre elements (2026-07-21). List sizes are env genes; the
+# per-field caps are part of the frozen contract (not tunable).
+REPORT_MAX_CELLS = int(os.environ.get("HALL_REPORT_MAX_CELLS", "6"))
+REPORT_MAX_DIALS = int(os.environ.get("HALL_REPORT_MAX_DIALS", "6"))
+REPORT_CELL_NAME_MAX = 20
+REPORT_CELL_METRICS_MAX = 4
+REPORT_METRIC_KEY_MAX = 12
+REPORT_METRIC_VAL_MAX = 14
+REPORT_DIAL_LABEL_MAX = 20
+REPORT_DIAL_VALUE_MAX = 10
+REPORT_DIAL_SUB_MAX = 16
+REPORT_CELL_STATES = ("up", "down", "warn", "unknown")
+REPORT_DIAL_LEVELS = ("ok", "warn", "crit")
 
 UNITS = []
 for part in UNITS_SPEC.split(","):
@@ -366,6 +382,112 @@ def _clean_lines(raw, warn):
     return lines
 
 
+def _clean_metrics(raw, warn, ci):
+    """Validate a cell's k/v metric list (<= REPORT_CELL_METRICS_MAX). Loud."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ReportError("cell %d metrics must be a list" % ci)
+    if len(raw) > REPORT_CELL_METRICS_MAX:
+        warn.append("cell %d metrics truncated %d->%d"
+                    % (ci, len(raw), REPORT_CELL_METRICS_MAX))
+    metrics = []
+    n = min(len(raw), REPORT_CELL_METRICS_MAX)       # bounded loop
+    for j in range(n):
+        m = raw[j]
+        if not isinstance(m, dict):
+            raise ReportError("cell %d metric %d must be an object" % (ci, j))
+        k, v = m.get("k"), m.get("v", "")
+        if not isinstance(k, str) or not k:
+            raise ReportError("cell %d metric %d needs a non-empty string k" % (ci, j))
+        if not isinstance(v, str):
+            raise ReportError("cell %d metric %d v must be a string" % (ci, j))
+        if len(k) > REPORT_METRIC_KEY_MAX:
+            warn.append("cell %d metric %d k truncated" % (ci, j))
+            k = k[:REPORT_METRIC_KEY_MAX]
+        if len(v) > REPORT_METRIC_VAL_MAX:
+            warn.append("cell %d metric %d v truncated" % (ci, j))
+            v = v[:REPORT_METRIC_VAL_MAX]
+        metrics.append({"k": k, "v": v})
+    return metrics
+
+
+def _clean_cells(raw, warn):
+    """Validate + truncate sibling-status cells (<= REPORT_MAX_CELLS). Loud."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ReportError("cells must be a list")
+    if len(raw) > REPORT_MAX_CELLS:
+        warn.append("cells truncated %d->%d" % (len(raw), REPORT_MAX_CELLS))
+    cells = []
+    n = min(len(raw), REPORT_MAX_CELLS)              # bounded loop
+    for i in range(n):
+        c = raw[i]
+        if not isinstance(c, dict):
+            raise ReportError("cell %d must be an object" % i)
+        name, state = c.get("name"), c.get("state", "unknown")
+        if not isinstance(name, str) or not name:
+            raise ReportError("cell %d needs a non-empty string name" % i)
+        if not isinstance(state, str) or state not in REPORT_CELL_STATES:
+            raise ReportError("cell %d state must be one of %r"
+                              % (i, REPORT_CELL_STATES))
+        if len(name) > REPORT_CELL_NAME_MAX:
+            warn.append("cell %d name truncated" % i)
+            name = name[:REPORT_CELL_NAME_MAX]
+        cells.append({"name": name, "state": state,
+                      "metrics": _clean_metrics(c.get("metrics"), warn, i)})
+    return cells
+
+
+def _clean_dials(raw, warn):
+    """Validate + truncate usage dials (<= REPORT_MAX_DIALS). pct clamps [0,100]."""
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ReportError("dials must be a list")
+    if len(raw) > REPORT_MAX_DIALS:
+        warn.append("dials truncated %d->%d" % (len(raw), REPORT_MAX_DIALS))
+    dials = []
+    n = min(len(raw), REPORT_MAX_DIALS)              # bounded loop
+    for i in range(n):
+        d = raw[i]
+        if not isinstance(d, dict):
+            raise ReportError("dial %d must be an object" % i)
+        label = d.get("label")
+        if not isinstance(label, str) or not label:
+            raise ReportError("dial %d needs a non-empty string label" % i)
+        raw_pct = d.get("pct")
+        if isinstance(raw_pct, bool) or not isinstance(raw_pct, (int, float)):
+            raise ReportError("dial %d pct must be a number" % i)
+        pct = float(raw_pct)
+        clamped = min(max(pct, 0.0), 100.0)
+        if clamped != pct:
+            warn.append("dial %d pct clamped %g->%g" % (i, pct, clamped))
+        pct = clamped
+        value, sub = d.get("value", ""), d.get("sub", "")
+        level = d.get("level", "ok")
+        if not isinstance(value, str):
+            raise ReportError("dial %d value must be a string" % i)
+        if not isinstance(sub, str):
+            raise ReportError("dial %d sub must be a string" % i)
+        if not isinstance(level, str) or level not in REPORT_DIAL_LEVELS:
+            raise ReportError("dial %d level must be one of %r"
+                              % (i, REPORT_DIAL_LEVELS))
+        if len(label) > REPORT_DIAL_LABEL_MAX:
+            warn.append("dial %d label truncated" % i)
+            label = label[:REPORT_DIAL_LABEL_MAX]
+        if len(value) > REPORT_DIAL_VALUE_MAX:
+            warn.append("dial %d value truncated" % i)
+            value = value[:REPORT_DIAL_VALUE_MAX]
+        if len(sub) > REPORT_DIAL_SUB_MAX:
+            warn.append("dial %d sub truncated" % i)
+            sub = sub[:REPORT_DIAL_SUB_MAX]
+        dials.append({"label": label, "pct": pct, "value": value,
+                      "sub": sub, "level": level})
+    return dials
+
+
 def _clean_ttl(raw, warn):
     """Clamp ttl_s to [MIN, MAX]; default when absent. bool is NOT a number."""
     if raw is None:
@@ -401,6 +523,8 @@ def validate_report(doc):
     report = {"title": title, "domain": domain, "spoken": spoken,
               "tiles": _clean_tiles(doc.get("tiles"), warn),
               "lines": _clean_lines(doc.get("lines"), warn),
+              "cells": _clean_cells(doc.get("cells"), warn),
+              "dials": _clean_dials(doc.get("dials"), warn),
               "ttl_s": _clean_ttl(doc.get("ttl_s"), warn)}
     return report, warn
 
@@ -650,6 +774,14 @@ class DisplayGovernor(threading.Thread):
                     self._warned_absent = True
                 return
             self._warned_absent = False
+            # A successful command clears the error run. power_errors gates
+            # /health, and a LIFETIME counter makes that gate sticky: one
+            # transient failure (e.g. the seconds before sway exists at boot)
+            # pins /health at 503 forever even while the panel is demonstrably
+            # lit — a monitor reading it sees a permanent false outage. Health
+            # must describe the CURRENT world, so this is a consecutive-error
+            # run, reset the moment we successfully drive the output.
+            self.state.power_errors = 0
             self.state.display_power = "on" if on else "off"
             self.state.last_power_change = time.time()
             print("[halld] display %s on %d output(s)%s"
@@ -720,6 +852,19 @@ def make_handler(state):
             self.wfile.write(b)
 
         def do_GET(self):
+            if self.path == "/ready":
+                # LIVENESS, not health: "is halld serving?" — deliberately
+                # independent of sway/outputs. /health is strict on purpose
+                # (a panel we cannot address is not healthy), but the kiosk's
+                # ExecStartPre gate cannot use it: sway only exists BECAUSE the
+                # kiosk starts, so gating the kiosk on display health is a
+                # cold-start deadlock — halld says 503 (no outputs), the kiosk
+                # waits forever, sway never starts, outputs never appear. That
+                # is exactly what wedged the panel dark after the 2026-07-25
+                # reboot (202 kiosk restarts). A readiness gate must never
+                # depend on the thing it gates.
+                return self._json(200, {"ok": True, "serving": True,
+                                        "port": PORT})
             if self.path == "/health":
                 m = state.merged()
                 # A panel we cannot address is NOT a healthy panel. Saying so

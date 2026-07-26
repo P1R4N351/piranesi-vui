@@ -135,6 +135,28 @@ class HalldTest(unittest.TestCase):
         except urllib.error.HTTPError as ex:
             return ex.code, json.loads(ex.read())
 
+    def test_0_ready_is_200_even_when_display_unhealthy(self):
+        """The kiosk's ExecStartPre gates on /ready. It MUST answer 200 while
+        the display is unaddressable, or we rebuild the 2026-07-25 cold-start
+        deadlock: sway exists only because the kiosk starts, so a gate that
+        waits for display health waits forever (202 restarts, panel dark).
+        /health stays strict — that is a different question."""
+        self.state.power_errors = 99                 # unaddressable panel
+        try:
+            with urllib.request.urlopen(
+                    "http://127.0.0.1:%d/ready" % self.port, timeout=5) as r:
+                self.assertEqual(r.status, 200)
+                self.assertTrue(json.loads(r.read())["serving"])
+            # ...and /health must still refuse to call that healthy.
+            try:
+                urllib.request.urlopen(
+                    "http://127.0.0.1:%d/health" % self.port, timeout=5)
+                self.fail("/health returned 200 with power_errors set")
+            except urllib.error.HTTPError as ex:
+                self.assertEqual(ex.code, 503)
+        finally:
+            self.state.power_errors = 0
+
     def test_1_idle_means_display_off(self):
         self.assertTrue(wait_for(lambda: self.power_calls()[-1:] == ["off"]))
         m = self.api("/vox/status")
@@ -293,6 +315,84 @@ class HalldTest(unittest.TestCase):
         self.assertEqual(self.api("/report")["report"]["title"], "Ephemeral")
         # With the report gone and voices dead, the hall sleeps.
         self.assertTrue(wait_for(lambda: self.power_calls()[-1:] == ["off"], 6))
+
+    def test_9a_cells_and_dials(self):
+        # Ordered after test_9 (sorts as test_9 < test_9a < ... ), in the same
+        # dead-vox report stage. The additive command-centre elements:
+        # sibling-status cells + usage dials ride the same frozen /report
+        # contract, back-compat with tiles.
+        code, body = self.post("/report", {
+            "title": "Sibling status", "domain": "fleet",
+            "spoken": "Trueblue is up, branch-1 is offline.",
+            "cells": [
+                {"name": "trueblue", "state": "up",
+                 "metrics": [{"k": "cpu", "v": "12%"}, {"k": "ram", "v": "41%"},
+                             {"k": "quorum", "v": "voter"}]},
+                {"name": "branch-1", "state": "down",
+                 "metrics": [{"k": "last seen", "v": "3h"}]}],
+            "dials": [
+                {"label": "ChatGPT quota", "pct": 68, "value": "68%",
+                 "sub": "204/300", "level": "ok"},
+                {"label": "branch-0 load", "pct": 91, "value": "18.2",
+                 "sub": "16 cores", "level": "warn"}]})
+        self.assertEqual(code, 200)
+        self.assertTrue(body["ok"])
+        # Echo through the feed the page polls.
+        self.assertTrue(wait_for(
+            lambda: self.api("/vox/status").get("report", {})
+            and self.api("/vox/status")["report"]["title"] == "Sibling status"))
+        m = self.api("/vox/status")
+        self.assertEqual(len(m["report"]["cells"]), 2)
+        self.assertEqual(m["report"]["cells"][0]["name"], "trueblue")
+        self.assertEqual(m["report"]["cells"][0]["state"], "up")
+        self.assertEqual(len(m["report"]["cells"][0]["metrics"]), 3)
+        self.assertEqual(m["report"]["cells"][1]["state"], "down")
+        self.assertEqual(len(m["report"]["dials"]), 2)
+        self.assertEqual(m["report"]["dials"][0]["label"], "ChatGPT quota")
+        self.assertEqual(m["report"]["dials"][1]["level"], "warn")
+        # GET /report agrees.
+        g = self.api("/report")
+        self.assertEqual(len(g["report"]["cells"]), 2)
+        self.assertEqual(len(g["report"]["dials"]), 2)
+
+        # Over-cap lists TRUNCATE (not reject): 8 cells -> 6, 8 dials -> 6.
+        big = {"title": "Truncate elements", "domain": "fleet",
+               "cells": [{"name": "n%d" % i, "state": "up"} for i in range(8)],
+               "dials": [{"label": "d%d" % i, "pct": 10 * i} for i in range(8)]}
+        code, body = self.post("/report", big)
+        self.assertEqual(code, 200)
+        self.assertTrue(wait_for(
+            lambda: self.api("/vox/status").get("report", {})
+            and self.api("/vox/status")["report"]["title"] == "Truncate elements"))
+        m = self.api("/vox/status")
+        self.assertEqual(len(m["report"]["cells"]), 6)
+        self.assertEqual(len(m["report"]["dials"]), 6)
+
+        # pct out of range CLAMPS to [0,100], accepted with a warning.
+        code, body = self.post("/report", {
+            "title": "Clamp pct",
+            "dials": [{"label": "over", "pct": 150}, {"label": "under", "pct": -20}]})
+        self.assertEqual(code, 200)
+        self.assertTrue(wait_for(
+            lambda: self.api("/vox/status").get("report", {})
+            and self.api("/vox/status")["report"]["title"] == "Clamp pct"))
+        m = self.api("/vox/status")
+        self.assertEqual(m["report"]["dials"][0]["pct"], 100.0)
+        self.assertEqual(m["report"]["dials"][1]["pct"], 0.0)
+
+        # Malformed element bodies are REJECTED with 400.
+        for bad in ({"title": "T", "cells": [{"name": "n", "state": "boom"}]},  # bad state
+                    {"title": "T", "cells": [{"state": "up"}]},                 # missing name
+                    {"title": "T", "cells": [{"name": "n",
+                     "metrics": [{"v": "x"}]}]},                                # metric missing k
+                    {"title": "T", "dials": [{"label": "d", "pct": "high"}]},   # pct wrong type
+                    {"title": "T", "dials": [{"label": "d"}]},                  # pct missing
+                    {"title": "T", "dials": [{"label": "d", "pct": 5,
+                     "level": "meltdown"}]}):                                   # bad level
+            code, body = self.post("/report", bad)
+            self.assertEqual(code, 400, bad)
+            self.assertFalse(body["ok"])
+            self.assertIn("error", body)
 
 
 if __name__ == "__main__":
