@@ -38,10 +38,18 @@ addressed: with none present, display_power is reported as "absent" (never
 "on"), /health goes unhealthy, and the condition is stated in the log rather
 than papered over.
 
-Wake signal: voxd keeps no explicit last_wake_at; `last_transcript_at` is
-the faithful proxy (transcripts only arise from post-wake captures and
-follow-up turns). Intercom sessions count as live conversation. voxd
-restarts clear the in-memory timestamp — the panel then sleeps until the
+Wake signal: voxd keeps no explicit last_wake_at. `last_transcript_at` was
+used as the proxy on the assumption that "transcripts only arise from
+post-wake captures and follow-up turns" — 2026-07-28 DISPROVED that:
+faster-whisper hallucinates filler ("Uh", "Mm.", "Mm-hmm.", "Yeah.") out of
+room noise, every such transcript refreshed the wake clock, and the panel
+stayed lit in an empty dark room (operator reported it twice). The proxy is
+now GATED on the unit actually being in a conversation (convo_active, or a
+live convo window, or intercom) — a hallucination matches no wake word and
+opens no conversation, so it no longer counts. Units that do not report
+convo_active at all fall back to the old behaviour so a stale sibling build
+cannot go silently deaf. Intercom sessions still count as live conversation.
+voxd restarts clear the in-memory timestamp — the panel then sleeps until the
 next wake, which is the honest failure direction for a screen.
 
 Conventions per paneld (workspace/infra/internode-panel): single-file
@@ -629,7 +637,23 @@ class HallState:
             modulation = merge_modulation(modulation, st.get("modulation"))
             if st.get("intercom", {}).get("active"):
                 intercom_live = True
-            last_activity = max(last_activity, _ts(st.get("last_transcript_at")))
+            # [2026-07-28] WAKE SOURCE: a transcript alone is NOT interaction.
+            # faster-whisper hallucinates filler out of room noise ("Uh", "Mm.",
+            # "Yeah.") and every such transcript used to refresh last_activity,
+            # holding the panel lit in an EMPTY room (operator reported twice).
+            # A hallucination never matches a wake word and never opens a
+            # conversation, so gate the transcript on THIS unit actually being in
+            # a conversation. Verified during the incident: convo_active False and
+            # answered_wakes 0 while last_transcript read "Yeah.".
+            # The header note above ("voxd keeps no explicit last_wake_at") is why
+            # the proxy existed; convo_active is the closest true wake signal voxd
+            # does expose. Falls back to the old behaviour for any unit that does
+            # not report convo_active at all, so a stale sibling build cannot go
+            # silently deaf.
+            _convo = st.get("convo_active")
+            _in_convo = bool(_convo) or float(st.get("convo_window_left_s") or 0) > 0
+            if _convo is None or _in_convo or st.get("intercom", {}).get("active"):
+                last_activity = max(last_activity, _ts(st.get("last_transcript_at")))
             state, caption = unit_presence(st)
             rank = PRIORITY[state]
             # tie-break: most recent transcript owns the hall
