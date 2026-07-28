@@ -65,10 +65,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BIND = os.environ.get("HALL_BIND", "0.0.0.0")
 PORT = int(os.environ.get("HALL_PORT", "9676"))
+# [2026-07-28 "red iris not working"] branch-0's OWN voxd (localhost — halld runs
+# on branch-0) was missing from the merge set, so threat asserted via the local
+# organ (incl. the face-daemon unknown-face flag, whose producer lives on this
+# host) never reached the hall orb. All three organs merge now; severity
+# precedence (threat>degraded>weather>auto) picks the max across units.
 UNITS_SPEC = os.environ.get(
     "HALL_VOX_UNITS",
     "internode-0=http://piranesi-internode-0.tail8d99b6.ts.net:9668,"
-    "branch-1=http://piranesi-branch-1.tail8d99b6.ts.net:9668")
+    "branch-1=http://piranesi-branch-1.tail8d99b6.ts.net:9668,"
+    "branch-0=http://127.0.0.1:9668")
 POLL_S = float(os.environ.get("HALL_POLL_S", "2"))
 WAKE_WINDOW_S = float(os.environ.get("HALL_WAKE_WINDOW_S", "3600"))
 POWER_CMD = os.environ.get(
