@@ -101,6 +101,18 @@ DARK_GRACE_S = float(os.environ.get("HALL_DARK_GRACE_S", "300"))
 # A wake this recent counts as ACTIVE interaction and lights even a dark room;
 # older-than-this wake activity does NOT keep a sustained-dark empty room lit.
 WAKE_RECENT_S = float(os.environ.get("HALL_WAKE_RECENT_S", "180"))
+
+# ---- HA control surface (POST /display) -----------------------------------
+# [2026-07-28] Operator directive: drive the panel from Home Assistant as a
+# switch entity. HA owns POLICY; halld keeps ACTUATION and its autonomous
+# FALLBACK. HA never drives the output directly — it asserts a TTL-BOUNDED
+# OVERRIDE here, so a dead or wedged HA (it lives on trueblue, which panicked
+# twice in 30h) can never pin the panel on or off: the override simply expires
+# and want_on() resumes deciding. mode="auto" clears it immediately.
+CONTROL_TOKEN = os.environ.get("HALL_CONTROL_TOKEN", "")
+CONTROL_TTL_MIN_S = float(os.environ.get("HALL_CONTROL_TTL_MIN_S", "15"))
+CONTROL_TTL_MAX_S = float(os.environ.get("HALL_CONTROL_TTL_MAX_S", "21600"))
+CONTROL_TTL_DEFAULT_S = float(os.environ.get("HALL_CONTROL_TTL_DEFAULT_S", "3600"))
 OCCUPANCY_STALE_S = float(os.environ.get("HALL_OCCUPANCY_STALE_S", "90"))
 
 # ---- output/orientation ---------------------------------------------------
@@ -558,6 +570,10 @@ class HallState:
         self.report = None             # last accepted report (retained on expiry)
         self.report_until = 0.0        # epoch the panel stops being active
         self.report_accepted_at = 0.0  # epoch of last accept (wake-activity mark)
+        # HA override: (mode, expires_at, by). mode in {"on","off"}; absent = auto.
+        self.override_mode = None
+        self.override_until = 0.0
+        self.override_by = ""
 
     def set_report(self, doc):
         """Validate + store a report. Returns (until, warnings); raises
@@ -666,11 +682,31 @@ class HallState:
             best = ("error", "The voices of the house are silent.", None)
         return best, last_activity, intercom_live, modulation
 
+    def set_override(self, mode, ttl_s, by):
+        """Assert or clear the HA override. Returns the stored triple."""
+        with self._lock:
+            if mode == "auto":
+                self.override_mode = None; self.override_until = 0.0; self.override_by = by
+            else:
+                self.override_mode = mode
+                self.override_until = time.time() + ttl_s
+                self.override_by = by
+            return self.override_mode, self.override_until, self.override_by
+
+    def override(self):
+        """(mode, until, by) with EXPIRY APPLIED — expired override reads as None,
+        which is what makes a dead HA harmless."""
+        with self._lock:
+            if self.override_mode and time.time() >= self.override_until:
+                self.override_mode = None; self.override_until = 0.0
+            return self.override_mode, self.override_until, self.override_by
+
     def merged(self):
         """One voxd-shaped status for the page + gate facts."""
         with self._lock:
             units = {n: dict(u) for n, u in self._units.items()}
         best, last_activity, intercom_live, modulation = self._merge_units(units)
+        _ovr_mode, _ovr_until, _ovr_by = self.override()
         wake_active = intercom_live or (
             last_activity and time.time() - last_activity < WAKE_WINDOW_S)
         wake_recent = intercom_live or (
@@ -697,7 +733,9 @@ class HallState:
             "occupancy": occ_state,
             "occupancy_luma": self.occ.get("luma"),
             "dark_for_s": round(dark_for, 1),
-            "want_display_on": want_on(bool(wake_active), bool(wake_recent),
+            "override": {"mode": _ovr_mode, "expires_at": _ovr_until, "by": _ovr_by},
+            "want_display_on": (_ovr_mode == "on") if _ovr_mode else want_on(
+                bool(wake_active), bool(wake_recent),
                                         occ_state, dark_for),
             "report_active": report_active,
             "report": report_rep if report_active else None,
@@ -943,7 +981,47 @@ def make_handler(state):
             self.end_headers()
             self.wfile.write(data)
 
+        def _display_control(self):
+            """POST /display {"mode":"on"|"off"|"auto","ttl_s":N,"by":"who"}.
+
+            The HA switch entity drives this. Auth is a shared secret; with no
+            token configured the endpoint REFUSES rather than running open —
+            this can power the household's wall panel, so fail closed.
+            ttl_s is CLAMPED so a buggy caller cannot pin the panel forever;
+            "auto" clears the override and returns the panel to want_on()."""
+            if not CONTROL_TOKEN:
+                return self._json(503, {"ok": False,
+                                        "error": "HALL_CONTROL_TOKEN unset - control disabled"})
+            if self.headers.get("X-Hall-Token", "") != CONTROL_TOKEN:
+                return self._json(403, {"ok": False, "error": "bad token"})
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except (TypeError, ValueError):
+                length = 0
+            if length <= 0 or length > 2048:
+                return self._json(400, {"ok": False, "error": "bad length"})
+            try:
+                doc = json.loads(self.rfile.read(length).decode("utf-8"))
+            except Exception:
+                return self._json(400, {"ok": False, "error": "bad json"})
+            mode = str(doc.get("mode", "")).lower()
+            if mode not in ("on", "off", "auto"):
+                return self._json(400, {"ok": False, "error": "mode must be on|off|auto"})
+            try:
+                ttl = float(doc.get("ttl_s", CONTROL_TTL_DEFAULT_S))
+            except (TypeError, ValueError):
+                ttl = CONTROL_TTL_DEFAULT_S
+            ttl = max(CONTROL_TTL_MIN_S, min(CONTROL_TTL_MAX_S, ttl))
+            by = str(doc.get("by", "unknown"))[:40]
+            m, until, who = state.set_override(mode, ttl, by)
+            print("[halld] display control: mode=%s ttl=%.0f by=%s" % (mode, ttl, by),
+                  flush=True)
+            return self._json(200, {"ok": True, "mode": m, "expires_at": until,
+                                    "by": who, "ttl_s": ttl})
+
         def do_POST(self):
+            if self.path == "/display":
+                return self._display_control()
             if self.path != "/report":
                 return self._json(404, {"ok": False, "error": "not found"})
             try:
