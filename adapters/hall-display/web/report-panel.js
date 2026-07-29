@@ -143,6 +143,206 @@
     ]);
   }
 
+  // --- command-centre elements: usage dials + sibling-status cells ----------
+
+  // Sibling liveness -> accent + inset glow. Same fallback-hex convention as
+  // tileTone: up=bronze/healthy, warn=amber caution, down=terracotta alert,
+  // unknown/anything-else=neutral muted.
+  function statusTone(state) {
+    if (state === "up")
+      return { accent: "var(--bronze-500, #C39C72)", label: "var(--bronze-300, #E3C9A8)",
+               glow: "var(--glow-accent, rgba(195,156,114,0.35))" };
+    if (state === "warn")
+      return { accent: "var(--mod-degraded, #C9A23F)", label: "var(--mod-degraded, #C9A23F)",
+               glow: "rgba(201,162,63,0.32)" };
+    if (state === "down")
+      return { accent: "var(--mood-error, #D9705F)", label: "var(--mood-error, #D9705F)",
+               glow: "rgba(217,112,95,0.32)" };
+    return { accent: "var(--text-muted, #8E8A80)", label: "var(--text-muted, #8E8A80)",
+             glow: "transparent" };
+  }
+
+  // Dial fill color by threshold level.
+  function dialTone(level) {
+    if (level === "crit") return "var(--mood-error, #D9705F)";
+    if (level === "warn") return "var(--mod-degraded, #C9A23F)";
+    return "var(--bronze-500, #C39C72)";
+  }
+
+  // Deterministic arc geometry for the SVG gauge (viewBox 0..100).
+  function polar(cx, cy, r, a) {
+    var t = a * Math.PI / 180;
+    return [cx + r * Math.cos(t), cy + r * Math.sin(t)];
+  }
+  function arcPath(cx, cy, r, a0, a1) {
+    var p0 = polar(cx, cy, r, a0), p1 = polar(cx, cy, r, a1);
+    var large = ((a1 - a0) % 360) > 180 ? 1 : 0;
+    return "M " + p0[0] + " " + p0[1] + " A " + r + " " + r +
+           " 0 " + large + " 1 " + p1[0] + " " + p1[1];
+  }
+
+  // The Piranesi columned-house mark, rendered inline as the sibling cell's
+  // status crest (pediment over three columns on a base line). Tinted to the
+  // liveness accent so the crest itself carries the state.
+  function HouseGlyph(color, size) {
+    var s = size || 16;
+    return e("svg", {
+      key: "glyph", width: s, height: s, viewBox: "0 0 24 24",
+      fill: "none", "aria-hidden": "true",
+      style: { flex: "0 0 auto", display: "block" },
+    }, [
+      // pediment
+      e("path", { key: "ped", d: "M3 9 L12 3 L21 9 Z", stroke: color,
+                  strokeWidth: 1.6, strokeLinejoin: "round", fill: "none" }),
+      // three columns
+      e("path", { key: "c1", d: "M6 10 V19", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+      e("path", { key: "c2", d: "M12 10 V19", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+      e("path", { key: "c3", d: "M18 10 V19", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+      // base line
+      e("path", { key: "base", d: "M3 21 H21", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+    ]);
+  }
+
+  // A 270deg arc-gauge instrument. Track is the full sweep; the value arc fills
+  // clockwise from the lower-left. Center shows the display value, the label
+  // below in small-caps, and an optional tiny sub-caption.
+  function Dial(dial, i) {
+    var pct = Math.max(0, Math.min(100, Number(dial.pct) || 0));
+    var color = dialTone(dial.level);
+    var A0 = 135, SWEEP = 270;                       // gap centered at the bottom
+    var track = arcPath(50, 50, 40, A0, A0 + SWEEP);
+    var kids = [
+      e("path", { key: "track", d: track, fill: "none",
+                  stroke: "var(--border-subtle, rgba(195,156,114,0.22))",
+                  strokeWidth: 9, strokeLinecap: "round" }),
+    ];
+    if (pct > 0.5) {                                 // omit near-zero to avoid a dot
+      kids.push(e("path", { key: "val", d: arcPath(50, 50, 40, A0, A0 + SWEEP * pct / 100),
+                            fill: "none", stroke: color, strokeWidth: 9, strokeLinecap: "round",
+                            style: { filter: "drop-shadow(0 0 3px " + color + ")" } }));
+    }
+    return e("div", {
+      key: "dial-" + i,
+      style: {
+        display: "flex", flexDirection: "column", alignItems: "center",
+        gap: "var(--space-1, 4px)", minWidth: 0,
+        padding: "var(--space-2, 8px) var(--space-1, 4px)",
+      },
+    }, [
+      e("div", { key: "g", style: { position: "relative", width: "100%", maxWidth: 132 } }, [
+        e("svg", { key: "svg", viewBox: "0 0 100 100",
+                   style: { width: "100%", height: "auto", display: "block" } }, kids),
+        e("div", {
+          key: "ctr",
+          style: {
+            position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 0, pointerEvents: "none",
+          },
+        }, [
+          e("div", {
+            key: "v",
+            style: {
+              fontFamily: "var(--font-display, Georgia, serif)",
+              fontSize: "clamp(18px, 3.1vmin, 34px)", lineHeight: 1, color: color, fontWeight: 500,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "78%",
+            },
+          }, dial.value || (Math.round(pct) + "%")),
+          dial.sub ? e("div", {
+            key: "s",
+            style: {
+              fontFamily: "var(--font-mono, monospace)", fontSize: "clamp(8px, 1.1vmin, 11px)",
+              color: "var(--text-muted, #8E8A80)", marginTop: 2, letterSpacing: "0.04em",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "88%",
+            },
+          }, dial.sub) : null,
+        ]),
+      ]),
+      e("div", {
+        key: "l",
+        style: {
+          fontFamily: "var(--font-ui, Verdana, sans-serif)", fontSize: "var(--text-xs, 12px)",
+          color: "var(--text-muted, #8E8A80)", letterSpacing: "var(--tracking-caps, 0.18em)",
+          textTransform: "uppercase", textAlign: "center",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%",
+        },
+      }, dial.label),
+    ]);
+  }
+
+  // A sibling-status card: house-crest + name + liveness word, then a divider
+  // and its live metrics as key/value rows. Same card idiom as Tile.
+  function Cell(cell, i) {
+    var tone = statusTone(cell.state);
+    var metrics = Array.isArray(cell.metrics) ? cell.metrics : [];
+    var head = e("div", {
+      key: "head",
+      style: { display: "flex", alignItems: "center", gap: "var(--space-2, 8px)" },
+    }, [
+      HouseGlyph(tone.accent, 18),
+      e("div", { key: "id", style: { display: "flex", flexDirection: "column", gap: 1, minWidth: 0 } }, [
+        e("div", {
+          key: "n",
+          style: {
+            fontFamily: "var(--font-ui, Verdana, sans-serif)", fontSize: "var(--text-sm, 14px)",
+            color: "var(--text-display, #E3C9A8)", fontWeight: 600, letterSpacing: "0.02em",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          },
+        }, cell.name),
+        e("div", {
+          key: "st",
+          style: {
+            fontFamily: "var(--font-ui, Verdana, sans-serif)", fontSize: "10px", color: tone.label,
+            letterSpacing: "var(--tracking-caps, 0.18em)", textTransform: "uppercase",
+          },
+        }, cell.state || "unknown"),
+      ]),
+    ]);
+    var rows = metrics.map(function (m, j) {
+      return e("div", {
+        key: "m-" + j,
+        style: {
+          display: "flex", alignItems: "baseline", justifyContent: "space-between",
+          gap: "var(--space-2, 8px)", padding: "3px 0",
+          borderTop: j === 0 ? "none" : "1px solid var(--border-subtle, rgba(195,156,114,0.22))",
+        },
+      }, [
+        e("span", {
+          key: "k",
+          style: {
+            fontFamily: "var(--font-ui, Verdana, sans-serif)", fontSize: "10px",
+            color: "var(--text-muted, #8E8A80)", letterSpacing: "var(--tracking-caps, 0.18em)",
+            textTransform: "uppercase", whiteSpace: "nowrap",
+          },
+        }, m.k),
+        e("span", {
+          key: "v",
+          style: {
+            fontFamily: "var(--font-mono, monospace)", fontSize: "clamp(12px, 1.7vmin, 15px)",
+            color: "var(--text-body, #D7CDBD)", textAlign: "right",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0,
+          },
+        }, m.v || "—"),
+      ]);
+    });
+    return e("div", {
+      key: "cell-" + i,
+      style: {
+        display: "flex", flexDirection: "column", gap: "var(--space-2, 8px)",
+        padding: "var(--space-3, 12px)", borderRadius: "var(--radius-md, 12px)",
+        background: "var(--navy-800, #122143)", borderLeft: "3px solid " + tone.accent,
+        boxShadow: tone.glow === "transparent" ? "none" : "inset 0 0 22px " + tone.glow,
+        minWidth: 0,
+      },
+    }, [
+      head,
+      rows.length ? e("div", {
+        key: "div",
+        style: { height: 1, background: "var(--border-subtle, rgba(195,156,114,0.22))", margin: "2px 0" },
+      }) : null,
+      rows.length ? e("div", { key: "rows", style: { display: "flex", flexDirection: "column" } }, rows) : null,
+    ]);
+  }
+
   function ReportPanel(props) {
     var report = props.report;
     if (!report) return null;
@@ -150,8 +350,12 @@
     var phase = props.phase === "out" ? "out" : "in";
     var tiles = Array.isArray(report.tiles) ? report.tiles : [];
     var lines = Array.isArray(report.lines) ? report.lines : [];
+    var cells = Array.isArray(report.cells) ? report.cells : [];
+    var dials = Array.isArray(report.dials) ? report.dials : [];
     // Up to 4 columns; fewer when there are fewer tiles so they don't stretch.
     var cols = Math.max(1, Math.min(4, tiles.length || 1));
+    var dialCols = Math.max(1, Math.min(4, dials.length || 1));
+    var cellCols = Math.max(1, Math.min(3, cells.length || 1));
 
     var header = e("div", {
       key: "hdr",
@@ -194,13 +398,37 @@
       ]),
     ]);
 
+    // Section order: dials, then sibling cells, then stat tiles, then advisory
+    // lines. Each present section carries bottom spacing only when a later
+    // section follows it, so a single-section report never trails empty space.
+    var gap4 = "var(--space-4, 16px)";
     var children = [header];
+    if (dials.length) {
+      children.push(e("div", {
+        key: "dials",
+        style: {
+          display: "grid", gridTemplateColumns: "repeat(" + dialCols + ", minmax(0, 1fr))",
+          gap: "var(--space-2, 8px)",
+          marginBottom: (cells.length || tiles.length || lines.length) ? gap4 : 0,
+        },
+      }, dials.map(Dial)));
+    }
+    if (cells.length) {
+      children.push(e("div", {
+        key: "cells",
+        style: {
+          display: "grid", gridTemplateColumns: "repeat(" + cellCols + ", minmax(0, 1fr))",
+          gap: "var(--space-2, 8px)",
+          marginBottom: (tiles.length || lines.length) ? gap4 : 0,
+        },
+      }, cells.map(Cell)));
+    }
     if (tiles.length) {
       children.push(e("div", {
         key: "tiles",
         style: {
           display: "grid", gridTemplateColumns: "repeat(" + cols + ", minmax(0, 1fr))",
-          gap: "var(--space-2, 8px)", marginBottom: lines.length ? "var(--space-4, 16px)" : 0,
+          gap: "var(--space-2, 8px)", marginBottom: lines.length ? gap4 : 0,
         },
       }, tiles.map(Tile)));
     }
