@@ -190,14 +190,14 @@
   // renders (bounded at 2x canonical 5.5).
   function HouseGlyph(color, size) {
     var s = size || 16;
-    var w = Math.round(s * 86 / 112);
+    var w = Math.round(s * 56 / 52);   // frame cropped to drawn bounds (ink x15-71 y24-76)
     function stroke(d, cap) {
       return e("path", { key: d, d: d, stroke: color, strokeWidth: 8,
                          strokeLinecap: "round", strokeLinejoin: "round",
                          fill: "none" });
     }
     return e("svg", {
-      key: "glyph", width: w, height: s, viewBox: "0 0 86 112",
+      key: "glyph", width: w, height: s, viewBox: "15 24 56 52",
       fill: "none", "aria-hidden": "true",
       style: { flex: "0 0 auto", display: "block" },
     }, [
