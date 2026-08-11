@@ -182,24 +182,30 @@
   }
 
   // The Piranesi columned-house mark, rendered inline as the sibling cell's
-  // status crest (pediment over three columns on a base line). Tinted to the
-  // liveness accent so the crest itself carries the state.
+  // status crest — the CANONICAL portico (assets/glyph.svg geometry verbatim:
+  // OPEN pediment, no closing baseline; 86x112 composition). Tinted to the
+  // liveness accent so the crest itself carries the state. Triad ruling
+  // 2026-08-11 (cs_msotehbn_o): exact canonical geometry at every size, color
+  // parameterized only; stroke bumped 5.5->8 viewBox-units for sub-30px
+  // renders (bounded at 2x canonical 5.5).
   function HouseGlyph(color, size) {
     var s = size || 16;
+    var w = Math.round(s * 86 / 112);
+    function stroke(d, cap) {
+      return e("path", { key: d, d: d, stroke: color, strokeWidth: 8,
+                         strokeLinecap: "round", strokeLinejoin: "round",
+                         fill: "none" });
+    }
     return e("svg", {
-      key: "glyph", width: s, height: s, viewBox: "0 0 24 24",
+      key: "glyph", width: w, height: s, viewBox: "0 0 86 112",
       fill: "none", "aria-hidden": "true",
       style: { flex: "0 0 auto", display: "block" },
     }, [
-      // pediment
-      e("path", { key: "ped", d: "M3 9 L12 3 L21 9 Z", stroke: color,
-                  strokeWidth: 1.6, strokeLinejoin: "round", fill: "none" }),
-      // three columns
-      e("path", { key: "c1", d: "M6 10 V19", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
-      e("path", { key: "c2", d: "M12 10 V19", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
-      e("path", { key: "c3", d: "M18 10 V19", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
-      // base line
-      e("path", { key: "base", d: "M3 21 H21", stroke: color, strokeWidth: 1.6, strokeLinecap: "round" }),
+      stroke("M23 39 L43 28 L63 39"),   // open pediment
+      stroke("M30 45 L30 69"),          // three columns
+      stroke("M43 45 L43 69"),
+      stroke("M56 45 L56 69"),
+      stroke("M19 72 L67 72"),          // stylobate
     ]);
   }
 
