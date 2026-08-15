@@ -36,3 +36,36 @@
   mood/modulation vocabulary, motion, copy rules) — authored in-app. It is the
   README the design agent consumes; treat it as the `conventions.md`
   equivalent. Keep it true rather than rewriting it.
+- **`readme.md` is REPO-authoritative, and the PULL must never blind-overwrite
+  it** (2026-08-15). Commit 3055c76 (2026-07-13) added two repo-side sections —
+  "Runtime modulation feed" and "Deriving & drift-proofing" — that were never
+  pushed up, so the remote copy sat as a strict SUBSET of local for a month.
+  `scripts/design-sync-pull.md` step 2 says to overwrite every changed DS-source
+  file from remote; readme.md IS a DS-source file, so a literal execution would
+  have deleted both sections. ~30 successful cron pulls in that window did not
+  regress it — the runbook is executed by an agent that noticed local was ahead —
+  but that is judgment, not a guarantee. Before writing readme.md during a pull,
+  diff it and push repo→project when local is the superset.
+
+## Sync-direction rule (both directions are live)
+
+- The design app is the upstream for ORB ANIMATION/EFFECT work (2026-07-13
+  designation, `scripts/design-sync-pull.md`). It is NOT upstream for the repo's
+  own engineering documentation. Practical split:
+  - project → repo: `_ds_bundle.js`, `PiranesiOrb.jsx`, cards, tokens, templates.
+  - repo → project: `readme.md` (see above), and anything documenting downstream
+    wiring the design app has no visibility into.
+
+## Cron pull health (checked 2026-08-15)
+
+- `41 */4 * * *` → `scripts/design-sync-pull.sh` (via `cron-load-gate.sh`), log
+  `~/Piranesi/logs/design-sync-pull.log`. **Last rc=0 was 2026-08-13T00:53.**
+  Every run since has failed: weekly-limit, then repeated
+  `401 OAuth access token has been revoked`, then `Request timed out`. Overall
+  31 rc=0 / 143 rc!=0 across 174 runs — the weekly-limit class dominates.
+- The main/interactive session authenticates to DesignSync fine; the failure is
+  specific to the headless `claude -p` agent's design OAuth. A revoked token
+  needs a re-auth on this host before the automated pull resumes.
+- The job logs rc=1 and moves on — nothing pages on a dead pull. It is a silent
+  no-op exactly like the class `design-sync-pull.md` step 6 warns about; the
+  ntfy-on-failure branch never runs because auth dies before the agent starts.
