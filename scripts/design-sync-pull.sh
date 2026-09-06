@@ -118,8 +118,11 @@ dispatch() {
       emit high design-sync-error "$(sig_of error "$DETAIL")" 1d \
         "design-sync-pull: FAILED" "design-sync-pull failed: ${DETAIL}" ;;
     quota)
-      emit low design-sync-quota weekly-limit 1d \
-        "design-sync-pull: quota exhausted" "design-sync-pull could not run: Claude weekly limit reached. ${DETAIL}" ;;
+      # Sig carries the limit KIND (session vs weekly) but not the agent rc, so a
+      # session limit and a weekly limit are separate news while a timeout-vs-1
+      # rc difference on the same limit is not. Was hardcoded "weekly-limit".
+      emit low design-sync-quota "$(sig_of quota "${DETAIL%% (agent*}")" 1d \
+        "design-sync-pull: quota exhausted" "design-sync-pull could not run: ${DETAIL}. Nothing was pulled, committed or deployed; the next scheduled tick retries." ;;
     *)
       emit high design-sync-status "$(sig_of nostatus "$STATUS")" 1d \
         "design-sync-pull: no verdict" \
@@ -134,7 +137,7 @@ main() {
   [[ -r "$NOTIFY" ]] || { echo "$(date -Is) notify.sh missing at $NOTIFY" >>"$LOG"; exit 3; }
   cd "$REPO" || { log "repo missing"; exit 1; }
   [[ -x "$CLAUDE" ]] || CLAUDE="$(command -v claude)" || { log "no claude CLI"; exit 1; }
-  local out rc=0
+  local out rc=0 kind=""
   out="$(mktemp /tmp/design-sync-pull.out.XXXXXX)" || { log "mktemp failed"; exit 3; }
   START_EPOCH="$(date +%s)"
   log "=== design-sync-pull start ==="
@@ -144,8 +147,18 @@ main() {
   HEAD_SHA="$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)" || HEAD_SHA=unknown
   read_status
   if (( rc != 0 )) && [[ "$STATUS" != ok-noop && "$STATUS" != ok-changed ]]; then
-    if grep -qi 'weekly limit' "$out"; then
-      STATUS=quota; DETAIL="agent rc=$rc"
+    # The CLI's quota banner is "You've hit your <kind> limit · resets <when>".
+    # <kind> is NOT always "weekly". Matching only that one wording is why
+    # status=quota fired ZERO times across 76 quota events in the log: the 5
+    # observed "session limit" ticks (2026-09-04T20:41, 09-05T00:41, 09-05T16:41
+    # and two earlier) all fell through to `error` and paged Sat at HIGH with
+    # "design-sync-pull: FAILED" for a transient limit that the next tick clears.
+    # Match the banner FAMILY, still anchored on "hit your ... limit" so an
+    # unrelated failure that merely says "limit" cannot be downgraded to low.
+    kind="$(grep -oiE "hit your [a-z0-9 -]{1,20} limit" "$out" | head -1 \
+            | sed -E 's/^[Hh]it [Yy]our +//; s/ +[Ll]imit$//' | tr 'A-Z ' 'a-z-')"
+    if [[ -n "$kind" ]]; then
+      STATUS=quota; DETAIL="Claude ${kind} limit reached (agent rc=$rc)"
     elif [[ "$STATUS" == missing || "$STATUS" == stale ]]; then
       STATUS=error; DETAIL="agent rc=$rc and no status file written"
     fi

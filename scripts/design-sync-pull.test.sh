@@ -175,6 +175,28 @@ main() {
     "$(run_once "" 1 "You've hit your weekly limit")"
   check "quota priority is low" low "$(last_field 2)"
 
+  # 6b — THE REGRESSION: the banner's <kind> is not always "weekly". Every
+  # "session limit" tick in production (5 of them, 2026-09-04..05) was
+  # misclassified as `error` and paged HIGH "FAILED"; status=quota had fired 0
+  # times in 76 quota events. Assert the OBSERVED wording, verdict-first — a
+  # `low` read on the sink alone would pass on a suppressed page.
+  rm -f "$TMP/repo/.design-sync/last-run.json"
+  run_once "" 1 "You've hit your session limit · resets 5pm (America/Toronto)" >/dev/null
+  check "session limit is quota, not error" quota "$(last_status)"
+  rm -f "$TMP/dedupe/design-sync-quota.stamp" "$TMP/repo/.design-sync/last-run.json"
+  check "session limit alerts when re-armed" 1 \
+    "$(run_once "" 1 "You've hit your session limit · resets 5pm (America/Toronto)")"
+  check "session limit priority is low" low "$(last_field 2)"
+  case "$(last_field 3)" in *"session limit"*) ok "quota body names the limit kind" ;;
+                            *) bad "quota body names the limit kind" ;; esac
+
+  # 6c — INJECTED FAULT (the other direction): the broadened match must not
+  # swallow a genuine failure. A crash whose output merely mentions "limit" is
+  # still an `error` page, not a low-priority quota notice.
+  rm -f "$TMP/repo/.design-sync/last-run.json"
+  run_once "" 1 "TypeError: request exceeded the configured limit" >/dev/null
+  check "FAULT unrelated 'limit' stays error" error "$(last_status)"
+
   # 7 — real news is never deduped into silence.
   check "ok-changed alerts" 1 "$(run_once "$J_CHANGED")"
   check "ok-changed priority is default" default "$(last_field 2)"
