@@ -76,9 +76,20 @@ setup_repo() {
   echo seed >"$TMP/repo/seed"                      || return 3
   git -C "$TMP/repo" add -A                        || return 3
   git -C "$TMP/repo" commit -qm seed               || return 3
-  printf '#!/bin/bash\n[ -n "${DS_TEST_JSON:-}" ] && printf %%s "$DS_TEST_JSON" > "%s/repo/.design-sync/last-run.json"\nprintf %%s "${DS_TEST_OUT:-}"\nexit ${DS_TEST_RC:-0}\n' "$TMP" \
+  printf '#!/bin/bash\necho dispatched >> "%s/agent-runs"\n[ -n "${DS_TEST_JSON:-}" ] && printf %%s "$DS_TEST_JSON" > "%s/repo/.design-sync/last-run.json"\nprintf %%s "${DS_TEST_OUT:-}"\nexit ${DS_TEST_RC:-0}\n' "$TMP" "$TMP" \
     >"$TMP/stub-claude" || return 3
   chmod +x "$TMP/stub-claude" || return 3
+  # Credential-store fixtures for the preflight. `authorized` is the default for
+  # every pre-existing assertion, so they keep exercising the dispatched-agent
+  # path exactly as before; the others drive the preflight's three outcomes.
+  # Token VALUES are dummies — the preflight only asks whether the key exists.
+  printf '{"claudeAiOauth":{"accessToken":"x"},"designOauth":{"accessToken":"x","scopes":["user:design:read"]}}\n' \
+    >"$TMP/creds-authorized.json"   || return 3
+  printf '{"claudeAiOauth":{"accessToken":"x"}}\n' \
+    >"$TMP/creds-no-design.json"    || return 3
+  printf '{not json\n' >"$TMP/creds-corrupt.json" || return 3
+  # The stub records every dispatch so "the agent did not run" is asserted on
+  # evidence, not on the absence of an alert.
   return 0
 }
 
@@ -86,13 +97,14 @@ setup_repo() {
 # Everything is POSITIONAL on purpose: bash persists `VAR=x func` assignments
 # into the calling shell, so an env-prefix style here would leak DS_TEST_RC=1
 # from the quota case into every later assertion.
-run_once() { # <status-json|""> [agent-rc] [agent-stdout] [dedupe-disable 0|1]
+run_once() { # <status-json|""> [agent-rc] [agent-stdout] [dedupe-disable 0|1] [creds-file]
   local before after
   before="$(wc -l <"$TMP/sink.tsv")"
   DS_TEST_JSON="${1:-}" DS_TEST_RC="${2:-0}" DS_TEST_OUT="${3:-}" \
   NOTIFY_DEDUPE_DISABLE="${4:-0}" \
   DS_REPO="$TMP/repo" DS_LOG="$TMP/run.log" DS_LOCK="$TMP/lock" \
   DS_CLAUDE="$TMP/stub-claude" DS_NOTIFY_SH="$NOTIFY_SH" DS_AGENT_TIMEOUT=30 \
+  DS_CREDENTIALS="${5:-$TMP/creds-authorized.json}" \
   NOTIFY_DEDUPE_DIR="$TMP/dedupe" NTFY_URL="http://127.0.0.1:${PORT}" \
   NTFY_TOPIC=test NTFY_FALLBACK_URL=none NTFY_OOB_URL="" \
     bash "$HERE/design-sync-pull.sh" >/dev/null 2>&1
@@ -201,6 +213,42 @@ main() {
   check "ok-changed alerts" 1 "$(run_once "$J_CHANGED")"
   check "ok-changed priority is default" default "$(last_field 2)"
   check "ok-changed repeats (repeat-after 0)" 1 "$(run_once "$J_CHANGED")"
+
+  # 8 — THE PREFLIGHT: `/design-login` mints a `designOauth` slot in the Claude
+  # Code credential store and DesignSync refuses without it, so when that slot is
+  # provably absent the agent's verdict is already known and spending a ~25-min
+  # agent run on it is what exhausts the session quota. Assert the verdict AND
+  # that no agent was dispatched — an alert alone would pass either way.
+  : >"$TMP/agent-runs"
+  rm -f "$TMP/dedupe/design-sync-auth.stamp" "$TMP/repo/.design-sync/last-run.json"
+  check "no designOauth -> noauth without the agent" 1 \
+    "$(run_once "" 0 "" 0 "$TMP/creds-no-design.json")"
+  check "preflight verdict is noauth" noauth "$(last_status)"
+  check "preflight did not dispatch the agent" 0 "$(wc -l <"$TMP/agent-runs")"
+  # The preflight must leave a CURRENT report, not a file frozen at the last
+  # dispatched run — a stale last-run.json is read as `stale` and pages HIGH.
+  check "preflight rewrote last-run.json" noauth \
+    "$(python3 "$HERE/design-sync-status.py" "$TMP/repo/.design-sync/last-run.json" | cut -f1)"
+
+  # 8b — INJECTED FAULT: a check that cannot fail is not a check. With the slot
+  # PRESENT the agent must still be dispatched, or the preflight would be
+  # silently pausing the pull forever and assertion 8 would pass on nothing.
+  : >"$TMP/agent-runs"
+  rm -f "$TMP/repo/.design-sync/last-run.json"
+  run_once "$J_NOOP" >/dev/null
+  check "FAULT designOauth present -> agent dispatched" 1 "$(wc -l <"$TMP/agent-runs")"
+
+  # 8c — FAILS OPEN: an unreadable or corrupt credential store means "cannot
+  # tell", never "provably absent". Suppressing a run we have NOT confirmed
+  # would be exactly the silent-failure class this suite exists to prevent.
+  : >"$TMP/agent-runs"
+  rm -f "$TMP/repo/.design-sync/last-run.json"
+  run_once "$J_NOOP" 0 "" 0 "$TMP/creds-corrupt.json" >/dev/null
+  check "FAULT corrupt store still dispatches" 1 "$(wc -l <"$TMP/agent-runs")"
+  : >"$TMP/agent-runs"
+  rm -f "$TMP/repo/.design-sync/last-run.json"
+  run_once "$J_NOOP" 0 "" 0 "$TMP/creds-absent.json" >/dev/null
+  check "FAULT missing store still dispatches" 1 "$(wc -l <"$TMP/agent-runs")"
 
   printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
   (( FAIL == 0 )) || return 1

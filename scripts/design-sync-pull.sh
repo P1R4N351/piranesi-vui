@@ -40,6 +40,7 @@ LOG="${DS_LOG:-/home/s/Piranesi/logs/design-sync-pull.log}"
 CLAUDE="${DS_CLAUDE:-/home/s/.nvm/versions/node/v24.15.0/bin/claude}"
 LOCK="${DS_LOCK:-/tmp/design-sync-pull.lock}"
 NOTIFY="${DS_NOTIFY_SH:-/home/s/Piranesi/astroclaw/workspace/skills/notify.sh}"
+CREDS="${DS_CREDENTIALS:-$HOME/.claude/.credentials.json}"
 STATUS_REL=.design-sync/last-run.json
 AGENT_TIMEOUT="${DS_AGENT_TIMEOUT:-1500}"
 STATUS=""      # ok-noop | ok-changed | noauth | error | missing | unparseable | stale
@@ -131,6 +132,49 @@ dispatch() {
   return 0
 }
 
+# DETERMINISTIC PREFLIGHT (fanout-r532, 2026-09-06). `/design-login` mints a
+# SEPARATE credential slot named `designOauth` in the Claude Code credential
+# store, alongside `claudeAiOauth`; the design scope is `user:design:read` and
+# the primary /login token does not carry it. When that slot is absent DesignSync
+# refuses every method, and the slot cannot be minted headlessly (/design-login
+# is a local-jsx TUI command). So the agent's verdict is knowable BEFORE we spend
+# it: probing the store costs ~20ms against a ~25-minute agent run, six times a
+# day. Those wasted runs are not free — they are what exhausted the Claude
+# session limit at 2026-09-04T20:41, 09-05T00:41 and 09-05T16:41, and each of
+# those exhaustions paged Sat.
+#
+# FAILS OPEN, in both directions: an unreadable or unparseable store (rc 2) or a
+# present slot (rc 1) dispatches the agent exactly as before, and the instant
+# /design-login is run the slot appears and the short-circuit stops. It can only
+# suppress a run whose failure it has positively confirmed in advance.
+design_cred_absent() { # 0 = provably absent, 1 = present, 2 = cannot tell
+  local rc=0
+  [[ -r "$CREDS" ]] || return 2
+  python3 -c 'import json, sys
+try:
+    obj = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(2)
+sys.exit(0 if isinstance(obj, dict) and not obj.get("designOauth") else 1)' \
+    "$CREDS" || rc=$?
+  return "$rc"
+}
+
+# Handle the whole tick without the agent when the credential is provably gone.
+# Writes the SAME report file the agent would have written (so last-run.json
+# stays current rather than frozen at the last dispatched run) and routes through
+# the SAME dispatch(), so the ntfy body, key and dedupe signature are unchanged.
+preflight_noauth() { # 0 = tick fully handled, 1 = dispatch the agent
+  design_cred_absent || return 1
+  STATUS=noauth
+  DETAIL="preflight: no designOauth slot in $CREDS, so DesignSync cannot be authorized and the agent was not dispatched. /design-login has not been run on this host."
+  printf '{\n "schema": 1,\n "ts": "%s",\n "status": "noauth",\n "detail": "%s",\n "head": "%s",\n "ds_files": null\n}\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$DETAIL" "$HEAD_SHA" \
+    >"$REPO/$STATUS_REL" || log "could not write $STATUS_REL (non-fatal)"
+  dispatch
+  return 0
+}
+
 PROMPT="Read scripts/design-sync-pull.md in this repo and follow it EXACTLY. It pulls the Claude Design project 8af39666-f588-49a2-a32d-e8e57314f5e5 (via the DesignSync tool) DOWN into this canonical repo: reconcile only DS-source files (NEVER the repo-only adapters/, scripts/, orb-params.json, .design-sync/), regenerate derived artifacts (scripts/verify-all.sh MUST pass), commit+push to gitea+github with CPCS attribution, and deploy the web bundles to the kiosk + branch-0 hall. Be strictly idempotent — a clean no-op when nothing changed. Do NOT send any ntfy yourself: step 6 is now the shell's job and a second page is noise. Your ONLY report channel is .design-sync/last-run.json, which you MUST write exactly once before you finish, per step 6 of the runbook. If the design project is unreachable OR the DesignSync tool lacks design authorization in this headless context, write status \"noauth\" and exit WITHOUT committing (do not fabricate)."
 
 main() {
@@ -138,12 +182,19 @@ main() {
   cd "$REPO" || { log "repo missing"; exit 1; }
   [[ -x "$CLAUDE" ]] || CLAUDE="$(command -v claude)" || { log "no claude CLI"; exit 1; }
   local out rc=0 kind=""
-  out="$(mktemp /tmp/design-sync-pull.out.XXXXXX)" || { log "mktemp failed"; exit 3; }
   START_EPOCH="$(date +%s)"
   log "=== design-sync-pull start ==="
+  HEAD_SHA="$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)" || HEAD_SHA=unknown
+  if preflight_noauth; then
+    log "=== design-sync-pull done rc=0 status=$STATUS (preflight, agent not dispatched) ==="
+    return 0
+  fi
+  out="$(mktemp /tmp/design-sync-pull.out.XXXXXX)" || { log "mktemp failed"; exit 3; }
   timeout "$AGENT_TIMEOUT" "$CLAUDE" -p "$PROMPT" --dangerously-skip-permissions \
     >"$out" 2>&1 || rc=$?
   cat "$out" >>"$LOG" || log "could not append agent output"
+  # Re-read AFTER the agent: an ok-changed run commits, so the pre-flight value
+  # is the old HEAD and every alert must name the one the agent left behind.
   HEAD_SHA="$(git -C "$REPO" rev-parse --short HEAD 2>/dev/null)" || HEAD_SHA=unknown
   read_status
   if (( rc != 0 )) && [[ "$STATUS" != ok-noop && "$STATUS" != ok-changed ]]; then

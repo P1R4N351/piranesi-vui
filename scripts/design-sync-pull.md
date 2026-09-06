@@ -72,6 +72,35 @@ on a schedule (see `design-sync-pull.sh`).
    were narrated rather than measured. If you did not count, write `null` — a null is a
    fact, an invented integer is not.
 
+## The noauth preflight — why a paused tick costs 20ms, not 25 minutes
+`/design-login` does not extend the primary claude.ai login. It mints a **separate
+credential slot named `designOauth`** in the Claude Code credential store
+(`~/.claude/.credentials.json` on this host), carrying the `user:design:read` scope
+that a `/login` token does not. It is a `local-jsx` TUI command, so it **cannot** be
+run from `claude -p`, from a cron, or from a subagent — only from an interactive
+Claude Code session on this host, as user `s`.
+
+So `scripts/design-sync-pull.sh` checks the store BEFORE dispatching the agent
+(`design_cred_absent` → `preflight_noauth`). No slot means the agent's verdict is
+already known, and the tick short-circuits to the same `noauth` alert without
+spending an agent run. This matters because the wasted runs were not free: they
+exhausted the Claude session limit on 2026-09-04T20:41, 09-05T00:41 and 09-05T16:41,
+and each exhaustion paged Sat.
+
+The check **fails open** — a corrupt, missing or unreadable store dispatches the
+agent exactly as before — so it can only suppress a run whose failure it has already
+confirmed.
+
+**Is the pull still gated?** One command, no agent, no network:
+
+```sh
+python3 -c "import json;print('designOauth' in json.load(open('/home/s/.claude/.credentials.json')))"
+```
+
+`False` = still gated, run `/design-login` once interactively. `True` = authorized;
+the next scheduled tick (`41 */4 * * *`) pulls on its own, and the recovery is
+self-clearing — no config to revert, no cron to re-enable.
+
 ## New downstream wiring a pulled mode may need (flag, don't silently drop)
 A new orb MODE only renders if a host can SELECT it. The orbs read `/vox/status.modulation`
 (produced by voxd, merged by halld). If the pull adds e.g. an `alert` modulation, note that voxd
