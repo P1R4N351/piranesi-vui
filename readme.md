@@ -3,7 +3,7 @@
 **House of Piranesi** is a voice user interface: an ambient assistant whose entire visible presence is a single fluid orb — a jiggly, breathing, pulsating circle carrying the brand's columned-house glyph. It runs full-screen on dedicated displays of any shape: landscape, portrait, square, or round.
 
 This is a **greenfield** system. Sources provided:
-- GitHub repo: https://github.com/P1R4N351/piranesi-vui — *empty at build time (no commits)*; kept as the intended home of the product code. Check it again before major work: real code there supersedes this system's inventions.
+- GitHub repo: https://github.com/P1R4N351/piranesi-vui — now populated with adapters/, components/, guidelines/, templates/ and skill definitions; this remains the home of the product code. Real code there supersedes this system's inventions.
 - Brand SVGs (uploaded): `assets/glyph.svg` (bare columned-house glyph), `assets/mark-circle.svg` (roundel on navy).
 - Brief: bronze on dark navy; hue/shade varies with mood/context; fluid animations with a unique signature per state (waiting, listening, thinking, talking, working, error).
 
