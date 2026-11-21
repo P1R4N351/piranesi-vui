@@ -4,7 +4,7 @@
 
 - The design system was authored **in the Claude Design app itself** (project
   "Piranesi VUI Design System", id `8af39666-f588-49a2-a32d-e8e57314f5e5`,
-  owned by the Piranesi claude.ai login — NOT the command-ds/Sat-login case).
+  owned by the Piranesi claude.ai login — NOT a personal login).
 - This repo (`github.com/P1R4N351/piranesi-vui`) was empty at DS build time;
   the DS readme names it as the intended product-code home. On 2026-07-10 the
   project was mirrored down into this repo verbatim as the initial commit —
@@ -59,7 +59,7 @@
 ## Cron pull health (checked 2026-08-15)
 
 - `41 */4 * * *` → `scripts/design-sync-pull.sh` (via `cron-load-gate.sh`), log
-  `~/Piranesi/logs/design-sync-pull.log`. **Last rc=0 was 2026-08-13T00:53.**
+  `$DS_LOG`. **Last rc=0 was 2026-08-13T00:53.**
   Every run since has failed: weekly-limit, then repeated
   `401 OAuth access token has been revoked`, then `Request timed out`. Overall
   31 rc=0 / 143 rc!=0 across 174 runs — the weekly-limit class dominates.

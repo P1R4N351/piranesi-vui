@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""halld — Piranesi VUI hall display organ (branch-0 kiosk).
+"""halld — Piranesi VUI hall display organ (hall kiosk).
 
 A spectator surface for the household's LIVE CONVERSATION capability: polls
 the voxd daemons (the process behind wake-word conversation + intercom) on
-every configured unit — internode-0 (FULL) and branch-1 (PERIPHERAL) — and
+every configured unit (FULL and PERIPHERAL units alike) — and
 serves the complete VUI orb page reflecting the household's merged
 conversational presence, attributed to the unit carrying it.
 
@@ -12,7 +12,7 @@ happened within the last HALL_WAKE_WINDOW_S (default 3600s) on any unit, or
 an intercom session is live right now.
 
 OCCUPANCY-TRIGGERED PANEL POWER (added 2026-07-13): the panel ALSO wakes when
-occupancyd (branch-0) reports the office `occupied` — lights on, someone here —
+occupancyd (on the hall host) reports the office `occupied` — lights on, someone here —
 and sleeps again only after the room has been continuously `dark` for
 HALL_DARK_GRACE_S. Occupancy is an ADDITIONAL trigger, never a veto: a wake
 word still lights the panel in a pitch-dark room, exactly as before. The two
@@ -29,7 +29,7 @@ set earlier dies with it. Re-applying on hotplug is what makes the panel come
 back up in landscape by itself when it is switched on again.
 
 HONEST POWER REPORTING: `swaymsg 'output * power on'` returns {"success": true}
-when it matches ZERO outputs. That is not a hypothetical — on branch-0 today
+when it matches ZERO outputs. That is not a hypothetical — on the hall host once
 every DRM connector reads `disconnected`, sway holds no output object at all,
 and this daemon's own journal has been logging a satisfied "[halld] display on"
 against a panel that is electrically absent. A monitor that a broken system can
@@ -73,8 +73,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BIND = os.environ.get("HALL_BIND", "0.0.0.0")
 PORT = int(os.environ.get("HALL_PORT", "9676"))
-# [2026-07-28 "red iris not working"] branch-0's OWN voxd (localhost — halld runs
-# on branch-0) was missing from the merge set, so threat asserted via the local
+# [2026-07-28 "red iris not working"] the hall host's OWN voxd (localhost — halld
+# runs there) was missing from the merge set, so threat asserted via the local
 # organ (incl. the face-daemon unknown-face flag, whose producer lives on this
 # host) never reached the hall orb. All three organs merge now; severity
 # precedence (threat>degraded>weather>auto) picks the max across units.
@@ -106,8 +106,8 @@ WAKE_RECENT_S = float(os.environ.get("HALL_WAKE_RECENT_S", "180"))
 # [2026-07-28] Operator directive: drive the panel from Home Assistant as a
 # switch entity. HA owns POLICY; halld keeps ACTUATION and its autonomous
 # FALLBACK. HA never drives the output directly — it asserts a TTL-BOUNDED
-# OVERRIDE here, so a dead or wedged HA (it lives on trueblue, which panicked
-# twice in 30h) can never pin the panel on or off: the override simply expires
+# OVERRIDE here, so a dead or wedged HA (it runs on another host, which has
+# been unstable) can never pin the panel on or off: the override simply expires
 # and want_on() resumes deciding. mode="auto" clears it immediately.
 CONTROL_TOKEN = os.environ.get("HALL_CONTROL_TOKEN", "")
 CONTROL_TTL_MIN_S = float(os.environ.get("HALL_CONTROL_TTL_MIN_S", "15"))
@@ -301,7 +301,7 @@ def unit_presence(st):
 # threat > degraded > storm > rain > auto. Any unit reporting a higher-severity
 # posture wins for the whole house; an unknown/absent value is severity 0 and
 # never lowers the posture. Values come from each voxd /status.modulation. Lets a
-# threat posture AND real weather (rain/storm) reach the branch-0 hall orb.
+# threat posture AND real weather (rain/storm) reach the hall orb.
 MOD_SEVERITY = {"threat": 4, "degraded": 3, "storm": 2, "rain": 1, "auto": 0}
 
 

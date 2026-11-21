@@ -1,6 +1,6 @@
 # Piranesi VUI — AtomMan tile morph (`vui-tiled`)
 
-The VUI for **atom-pc's built-in square lid display** (Minisforum AtomMan
+The VUI for **the AtomMan PC's built-in square lid display** (Minisforum AtomMan
 X7 Ti, 4-inch serial-fed MCU tile panel — **no framebuffer**, so no orb).
 This morph translates the House of Piranesi vocabulary into the panel's
 fixed tile grammar, and is **controlled by the collective**: any household
@@ -8,9 +8,8 @@ member asserts the display over HTTP; when nothing is asserted it settles
 to the mesh's ambient affect (spooler lume ethogram) — never this box's
 own CPU stats.
 
-Foundation: the proven `atomman-proto` serial work (atom-pc,
-`C:/Users/Gary/atomman-proto/drive.py`, control verified 2026-05-29) and
-the `paneld` device-organ conventions (`workspace/infra/internode-panel`).
+Foundation: the proven `atomman-proto` serial work (`drive.py`, control
+verified 2026-05-29) and the `paneld` device-organ conventions.
 Protocol reference: github.com/RamSet/AtomMan.
 
 ## Tile grammar (what the panel actually shows)
@@ -35,14 +34,14 @@ Protocol reference: github.com/RamSet/AtomMan.
   to ambient. 400 on unknown state/modulation.
 - `POST /clear` — drop the assertion immediately.
 
-Ambient: polls `VUI_TILES_LUME_URL` (default: the internode-0 internode
-spooler `:11434/lume`, the household's one lume owner on that box) every
+Ambient: polls `VUI_TILES_LUME_URL` (the household spooler's `:11434/lume`
+endpoint; set it for your deployment) every
 10s; expr→state map in `LUME_STATE`; lume unreachable shows as degraded.
 
-## Deploy (atom-pc, Windows)
+## Deploy (AtomMan PC, Windows)
 
 ```powershell
-# 1. stage (from pmain):  scp vui_tiled.py <user>@<atom-pc-address>:C:/piranesi/vui-tiles/
+# 1. stage:  scp vui_tiled.py <user>@<atomman-address>:C:/piranesi/vui-tiles/
 # 2. venv with pyserial (reuse the proto's, or):
 py -3 -m venv C:\piranesi\vui-tiles\venv
 C:\piranesi\vui-tiles\venv\Scripts\pip install pyserial

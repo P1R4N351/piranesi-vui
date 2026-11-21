@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """vui-tiled — Piranesi VUI morph for the AtomMan X7 Ti lid display.
 
-The atom-pc lid screen is a 4-inch serial-fed MCU tile panel (COM3, 115200,
+The AtomMan lid screen is a 4-inch serial-fed MCU tile panel (COM3, 115200,
 ENQ -> tile-reply; see README). It has NO framebuffer, so this morph
 translates the House of Piranesi VUI vocabulary into the panel's fixed
 tiles: the weather icon becomes the mood glyph (threat = tornado), the CPU
@@ -14,11 +14,11 @@ ambient affect polled from the spooler /lume endpoint — it reflects the
 collective, never just this box's own CPU.
 
 FOUNDATION: builds directly on the proven household groundwork —
-  * atomman-proto (atom-pc C:/Users/Gary/atomman-proto, verified 2026-05-29):
+  * atomman-proto (verified 2026-05-29):
     the ENQ/tile serial protocol, frame builder, fixed (id,seq) rotation and
     the stop-SCCS / RSFT_AutoStartSCCSTask restore procedure are lifted from
     drive.py unchanged.
-  * paneld (workspace infra/internode-panel): the device-panel organ
+  * paneld: the device-panel organ
     conventions — single-file stdlib daemon, sampler/cache threads, bounded
     loops, CORS, Nice'd service — and the lume ethogram as the household's
     ambient affect (spooler GET /lume -> {expr: boot|healthy|active|degraded|
@@ -38,9 +38,8 @@ PORT_SERIAL = os.environ.get("VUI_TILES_COM", "COM3")
 BAUD = 115200
 HTTP_BIND = os.environ.get("VUI_TILES_BIND", "0.0.0.0")
 HTTP_PORT = int(os.environ.get("VUI_TILES_PORT", "9674"))
-# Collective ambient = the household workhorse's lume organ (internode-0
-# internode spooler :11434 — the ONE lume owner on that box). atom-pc is on
-# the tailnet, so MagicDNS resolves. Override for a different affect source.
+# Collective ambient = the household spooler's lume organ (:11434/lume).
+# Set VUI_TILES_LUME_URL for your deployment.
 LUME_URL = os.environ.get(
     "VUI_TILES_LUME_URL",
     "http://piranesi-internode-0.tail8d99b6.ts.net:11434/lume")

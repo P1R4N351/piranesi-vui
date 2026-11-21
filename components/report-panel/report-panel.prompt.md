@@ -11,15 +11,15 @@ The control-centre report panel: use it whenever the voice organ delivers a **st
     { "label": "Spoolers", "value": "2 warn", "ok": false },
     { "label": "Queue",    "value": "—",      "ok": null  }
   ],
-  "lines": ["internode-0 spooler starved", "branch-1 at RAM ceiling"], // <=6 advisory rows
+  "lines": ["node-d spooler starved", "node-c at RAM ceiling"], // <=6 advisory rows
   "dials": [                             // <=6 usage gauges (optional, additive)
     { "label": "ChatGPT quota", "pct": 68, "value": "68%", "sub": "204/300", "level": "ok"   },
-    { "label": "branch-0 load", "pct": 91, "value": "18.2", "sub": "16 cores", "level": "warn" }
+    { "label": "node-a load", "pct": 91, "value": "18.2", "sub": "16 cores", "level": "warn" }
   ],
   "cells": [                             // <=6 sibling-status cards (optional, additive)
-    { "name": "trueblue", "state": "up",
+    { "name": "node-b", "state": "up",
       "metrics": [ { "k": "cpu", "v": "12%" }, { "k": "ram", "v": "41%" }, { "k": "quorum", "v": "voter" } ] },
-    { "name": "branch-1", "state": "down", "metrics": [ { "k": "last seen", "v": "3h" } ] }
+    { "name": "node-c", "state": "down", "metrics": [ { "k": "last seen", "v": "3h" } ] }
   ],
   "ttl_s": 90                            // clamped 15..600, default 90
 }

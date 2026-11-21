@@ -252,7 +252,7 @@ class HalldTest(unittest.TestCase):
             "tiles": [{"label": "Siblings", "value": "17", "ok": True},
                       {"label": "Alerts", "value": "0", "ok": None},
                       {"label": "Spooler", "value": "DOWN", "ok": False}],
-            "lines": ["branch-0 load 14.2", "gitea CT110 healthy"]})
+            "lines": ["node-a load 14.2", "git forge healthy"]})
         self.assertEqual(code, 200)
         self.assertTrue(body["ok"])
         self.assertGreater(body["until"], time.time())
@@ -323,17 +323,17 @@ class HalldTest(unittest.TestCase):
         # contract, back-compat with tiles.
         code, body = self.post("/report", {
             "title": "Sibling status", "domain": "fleet",
-            "spoken": "Trueblue is up, branch-1 is offline.",
+            "spoken": "Node B is up, node C is offline.",
             "cells": [
-                {"name": "trueblue", "state": "up",
+                {"name": "node-b", "state": "up",
                  "metrics": [{"k": "cpu", "v": "12%"}, {"k": "ram", "v": "41%"},
                              {"k": "quorum", "v": "voter"}]},
-                {"name": "branch-1", "state": "down",
+                {"name": "node-c", "state": "down",
                  "metrics": [{"k": "last seen", "v": "3h"}]}],
             "dials": [
                 {"label": "ChatGPT quota", "pct": 68, "value": "68%",
                  "sub": "204/300", "level": "ok"},
-                {"label": "branch-0 load", "pct": 91, "value": "18.2",
+                {"label": "node-a load", "pct": 91, "value": "18.2",
                  "sub": "16 cores", "level": "warn"}]})
         self.assertEqual(code, 200)
         self.assertTrue(body["ok"])
@@ -343,7 +343,7 @@ class HalldTest(unittest.TestCase):
             and self.api("/vox/status")["report"]["title"] == "Sibling status"))
         m = self.api("/vox/status")
         self.assertEqual(len(m["report"]["cells"]), 2)
-        self.assertEqual(m["report"]["cells"][0]["name"], "trueblue")
+        self.assertEqual(m["report"]["cells"][0]["name"], "node-b")
         self.assertEqual(m["report"]["cells"][0]["state"], "up")
         self.assertEqual(len(m["report"]["cells"][0]["metrics"]), 3)
         self.assertEqual(m["report"]["cells"][1]["state"], "down")
