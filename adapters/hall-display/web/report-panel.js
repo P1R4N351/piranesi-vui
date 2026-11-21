@@ -184,8 +184,8 @@
   // The Piranesi columned-house mark, rendered inline as the sibling cell's
   // status crest — the CANONICAL portico (assets/glyph.svg geometry verbatim:
   // OPEN pediment, no closing baseline; 86x112 composition). Tinted to the
-  // liveness accent so the crest itself carries the state. Triad ruling
-  // 2026-08-11 (cs_msotehbn_o): exact canonical geometry at every size, color
+  // liveness accent so the crest itself carries the state. Design rule
+  // 2026-08-11: exact canonical geometry at every size, color
   // parameterized only; stroke bumped 5.5->8 viewBox-units for sub-30px
   // renders (bounded at 2x canonical 5.5).
   function HouseGlyph(color, size) {
