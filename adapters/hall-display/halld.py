@@ -52,7 +52,7 @@ cannot go silently deaf. Intercom sessions still count as live conversation.
 voxd restarts clear the in-memory timestamp — the panel then sleeps until the
 next wake, which is the honest failure direction for a screen.
 
-Conventions per paneld (workspace/infra/internode-panel): single-file
+Conventions per paneld (the panel daemon): single-file
 stdlib daemon, sampler threads feeding cached state, bounded loops,
 time-limited HTTP + subprocess, CORS on GETs.
 """
@@ -80,13 +80,11 @@ PORT = int(os.environ.get("HALL_PORT", "9676"))
 # precedence (threat>degraded>weather>auto) picks the max across units.
 UNITS_SPEC = os.environ.get(
     "HALL_VOX_UNITS",
-    "internode-0=http://piranesi-internode-0.tail8d99b6.ts.net:9668,"
-    "branch-1=http://piranesi-branch-1.tail8d99b6.ts.net:9668,"
-    "branch-0=http://127.0.0.1:9668")
+    "local=http://127.0.0.1:9668")
 POLL_S = float(os.environ.get("HALL_POLL_S", "2"))
 WAKE_WINDOW_S = float(os.environ.get("HALL_WAKE_WINDOW_S", "3600"))
 POWER_CMD = os.environ.get(
-    "HALL_POWER_CMD", "/home/p/dashboard/kiosk/display-power.sh")
+    "HALL_POWER_CMD", "/opt/vui-hall/kiosk/display-power.sh")
 POWER_TICK_S = float(os.environ.get("HALL_POWER_TICK_S", "20"))
 
 # ---- occupancy trigger ----------------------------------------------------
@@ -123,7 +121,7 @@ TRANSFORM = os.environ.get("HALL_TRANSFORM", "normal")
 OUTPUT_SEL = os.environ.get("HALL_OUTPUT", "*")
 ENSURE_VUI = os.environ.get("HALL_ENSURE_VUI", "1") not in ("0", "off", "false")
 VUI_CMD = os.environ.get(
-    "HALL_VUI_CMD", "/home/p/dashboard/kiosk/start-chromium.sh")
+    "HALL_VUI_CMD", "/opt/vui-hall/kiosk/start-chromium.sh")
 VUI_PROC = os.environ.get("HALL_VUI_PROC", "chromium")
 SWAY_TIMEOUT_S = 10
 WEB_ROOT = os.environ.get(

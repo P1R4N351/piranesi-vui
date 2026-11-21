@@ -14,7 +14,7 @@
 set -euo pipefail
 
 readonly ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-readonly REPO="${ASTROCLAW_ORB_REPO:-/home/s/astroclaw-vui-orb}"
+readonly REPO="${ASTROCLAW_ORB_REPO:-$HOME/astroclaw-vui-orb}"
 readonly REL="apps/android/app/src/main/java/ai/astroclaw/app/ui/PiranesiOrbParams.kt"
 readonly TARGET="${REPO}/${REL}"
 

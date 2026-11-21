@@ -47,7 +47,7 @@ Contract: **`/vox/status.modulation ∈ {"auto", "degraded", "threat"}`** (produ
 by voxd; more values may follow). Every host reads it and passes it to the orb:
 
 - **Vivid-unit kiosk** (`kiosk.js` `modulationFor`) — polls the device's voxd proxy.
-- **Branch-0 hall** (`hall.js` `modulationFor`) — polls `halld`, which merges the
+- **Hall display** (`hall.js` `modulationFor`) — polls `halld`, which merges the
   field across units by SEVERITY (any unit's `threat` puts the whole house in
   threat; `degraded` outranks `auto`).
 - **Native Android** (`VoiceTabScreen` → `PiranesiOrb(modulation=…)`) — from app

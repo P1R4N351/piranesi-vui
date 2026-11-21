@@ -12,4 +12,3 @@
 #               and verified only when present; absence is a NOTE, not a failure,
 #               because the path is host-dependent.
 repo      adapters/hall-display/web/ds
-external  /home/s/Piranesi/openclaw/workspace/state/contrib-staging/vivid-unit-seed/interface-payload/opt/piranesi/vui-kiosk/web/ds

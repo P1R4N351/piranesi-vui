@@ -42,7 +42,7 @@ HTTP_PORT = int(os.environ.get("VUI_TILES_PORT", "9674"))
 # Set VUI_TILES_LUME_URL for your deployment.
 LUME_URL = os.environ.get(
     "VUI_TILES_LUME_URL",
-    "http://piranesi-internode-0.tail8d99b6.ts.net:11434/lume")
+    "http://127.0.0.1:11434/lume")
 LUME_POLL_S = float(os.environ.get("VUI_TILES_LUME_POLL_S", "10"))
 DEFAULT_TTL_S = float(os.environ.get("VUI_TILES_DEFAULT_TTL_S", "120"))
 NIGHT_FROM, NIGHT_TO = 20, 7  # local hours using night icon variants
