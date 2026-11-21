@@ -42,7 +42,7 @@ spooler `:11434/lume`, the household's one lume owner on that box) every
 ## Deploy (atom-pc, Windows)
 
 ```powershell
-# 1. stage (from pmain):  scp vui_tiled.py sat@100.73.152.74:C:/piranesi/vui-tiles/
+# 1. stage (from pmain):  scp vui_tiled.py <user>@<atom-pc-address>:C:/piranesi/vui-tiles/
 # 2. venv with pyserial (reuse the proto's, or):
 py -3 -m venv C:\piranesi\vui-tiles\venv
 C:\piranesi\vui-tiles\venv\Scripts\pip install pyserial
